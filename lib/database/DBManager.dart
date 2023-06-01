@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:web_sqlite_test/database/DBConstants.dart';
+import 'package:web_sqlite_test/database/ExecSqlResult.dart';
 import 'package:web_sqlite_test/model/DBFileInfo.dart';
 
 class DBManager {
@@ -97,10 +98,10 @@ class DBManager {
     }
   }
 
-  Future<Database?>? openDatabase(String databaseName,
+  Future<Database?>? openDatabase(String? databaseName,
       [DBDirConst? dirConst]) async {
     try {
-      if (databaseName.isEmpty) {
+      if (databaseName == null || databaseName.isEmpty) {
         return null;
       }
       if (!databaseName.endsWith(".db")) {
@@ -116,21 +117,45 @@ class DBManager {
     return null;
   }
 
-  void execSQL(String databaseName, String sql, [DBDirConst? dirConst]) {
+  Future<ExecSqlResult> execSQLWithResult(String databaseName, String sql,
+      [DBDirConst? dirConst]) async {
     if (databaseName.isEmpty) {
-      return;
+      return ExecSqlResult.newErrorResult("数据库名称为空");
     }
     if (!databaseName.endsWith(".db")) {
       databaseName = "$databaseName.db";
     }
+    Database? database;
     try {
-      Future<Database?>? databaseFuture = openDatabase(databaseName, dirConst);
-      databaseFuture?.then((value) {
-        value?.prepare(sql);
-        value?.dispose();
-      });
+      database = await openDatabase(databaseName, dirConst);
+      ResultSet? resultSet = database?.select(sql);
+      return ExecSqlResult.newSuccessResult(resultSet?.toString());
     } catch (exception) {
       Log.message("application execSQL error: $exception");
+      return ExecSqlResult.newErrorResult(exception.toString());
+    } finally {
+      database?.dispose();
+    }
+  }
+
+  Future<ExecSqlResult> execSQL(String databaseName, String sql,
+      [DBDirConst? dirConst]) async {
+    if (databaseName.isEmpty) {
+      return ExecSqlResult.newErrorResult("数据库名称为空");
+    }
+    if (!databaseName.endsWith(".db")) {
+      databaseName = "$databaseName.db";
+    }
+    Database? database;
+    try {
+      database = await openDatabase(databaseName, dirConst);
+      database?.execute(sql);
+      return ExecSqlResult.newSuccessResult(null);
+    } catch (exception) {
+      Log.message("application execSQL error: $exception");
+      return ExecSqlResult.newErrorResult(exception.toString());
+    } finally {
+      database?.dispose();
     }
   }
 }
