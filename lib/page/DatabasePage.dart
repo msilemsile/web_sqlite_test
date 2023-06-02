@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:sqlite3/sqlite3.dart' as sql3;
+import 'package:web_sqlite_test/database/DBCommandDialog.dart';
 import 'package:web_sqlite_test/database/DBConstants.dart';
 import 'package:web_sqlite_test/database/DBManager.dart';
 import 'package:web_sqlite_test/model/DBFileInfo.dart';
@@ -178,7 +178,8 @@ class _DatabasePageState extends State<DatabasePage>
                       GestureDetector(
                         onTap: () {
                           _lastConnectDBFileInfo = dbFileInfo;
-                          showExecSqlCommandDialog(context, dbFileInfo);
+                          DBCommandDialog(dbFileInfo: _lastConnectDBFileInfo!)
+                              .show(context);
                         },
                         child: const RectangleShape(
                           solidColor: AppColors.mainColor,
@@ -283,8 +284,13 @@ class _DatabasePageState extends State<DatabasePage>
 
   @override
   onTabLongTap() async {
-    await DBManager.getInstance().deleteAllDatabase();
-    setState(() {});
+    AppAlertDialog.builder()
+        .setTitle("确定删除所有数据库吗?")
+        .setCancelTxt("取消")
+        .setConfirmCallback((alertDialog) async {
+      await DBManager.getInstance().deleteAllDatabase();
+      setState(() {});
+    }).show(context);
   }
 
   @override
@@ -391,7 +397,7 @@ class _DatabasePageState extends State<DatabasePage>
       if (_lastConnectDBFileInfo == null) {
         Toast.show(context, "暂无数据");
       } else {
-        showExecSqlCommandDialog(context, _lastConnectDBFileInfo!);
+        DBCommandDialog(dbFileInfo: _lastConnectDBFileInfo!).show(context);
       }
     } else if (moreAction == refreshDatabaseAction) {
       pullToRefreshState.currentState?.show();
@@ -414,101 +420,6 @@ class _DatabasePageState extends State<DatabasePage>
         }
       }).show(context);
     }
-  }
-
-  void showExecSqlResult(String title, String message) {
-    AppAlertDialog.builder()
-        .setTitle(title)
-        .setContent(message)
-        .setCancelTxt("复制")
-        .setCancelCallback((alertDialog) {
-      Clipboard.setData(ClipboardData(text: message));
-      Toast.show(context, "复制成功");
-    }).show(context);
-  }
-
-  void showExecSqlCommandDialog(BuildContext context, DBFileInfo dbFileInfo) {
-    AppLoading.show(context);
-    DBManager.getInstance()
-        .openDatabase(_lastConnectDBFileInfo?.dbFileName)
-        ?.then((openDatabase) {
-      TextEditingController editingController = TextEditingController();
-      AppAlertDialog.builder()
-          .setTitle("SQL命令控制台")
-          .setContentWidget(
-              buildExecSqlWidget(_lastConnectDBFileInfo!, editingController))
-          .setAutoClickButtonDismiss(false)
-          .setExtendActionTxt("清空")
-          .setExtendActionCallback((alertDialog) {
-            editingController.text = "";
-          })
-          .setCancelCallback((alertDialog) {
-            openDatabase?.dispose();
-            alertDialog.dismiss();
-          })
-          .setCancelTxt("断开")
-          .setConfirmTxt("执行")
-          .setConfirmCallback((_) async {
-            String sqlExec = editingController.text.toString().trim();
-            if (sqlExec.isEmpty) {
-              Toast.show(context, "sql命令不能为空");
-              return;
-            } else {
-              try {
-                sql3.ResultSet? resultSet = openDatabase?.select(sqlExec);
-                showExecSqlResult("执行成功", resultSet.toString());
-              } catch (error) {
-                Log.message("exeSqlAction: error: $error");
-                showExecSqlResult("执行失败", error.toString());
-              }
-            }
-          })
-          .show(context);
-    }).onError((error, stackTrace) {
-      Toast.show(context, "连接失败");
-    }).whenComplete(() {
-      AppLoading.hide();
-    });
-  }
-
-  Widget buildExecSqlWidget(
-      DBFileInfo dbFileInfo, TextEditingController editingController) {
-    return SizedBox(
-      width: double.infinity,
-      height: 200,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
-        child: Column(
-          children: [
-            Text("当前连接的数据库: ${dbFileInfo.dbFileName}"),
-            SpaceWidget.createHeightSpace(10),
-            Expanded(
-                child: RectangleShape(
-              solidColor: Colors.black,
-              cornerAll: 5,
-              child: Material(
-                color: Colors.transparent,
-                child: TextField(
-                  scrollPadding: EdgeInsets.zero,
-                  expands: true,
-                  maxLines: null,
-                  minLines: null,
-                  controller: editingController,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.fromLTRB(5, 5, 5, 5),
-                      hintText: "输入SQL命令",
-                      border: InputBorder.none),
-                  keyboardType: TextInputType.url,
-                  cursorColor: Colors.yellow,
-                  style: const TextStyle(color: Colors.yellow),
-                ),
-              ),
-            ))
-          ],
-        ),
-      ),
-    );
   }
 
   Widget buildCreateDBWidget(TextEditingController editingController) {
