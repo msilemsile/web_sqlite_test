@@ -1,4 +1,4 @@
-import 'package:web_sqlite_test/database/DBManager.dart';
+import 'DBDirConst.dart';
 
 abstract class DBConstants {
   ///本地数据库目录

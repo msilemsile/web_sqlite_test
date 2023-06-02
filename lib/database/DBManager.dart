@@ -1,11 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter_app/flutter_app.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
-import 'package:web_sqlite_test/database/DBConstants.dart';
-import 'package:web_sqlite_test/model/DBFileInfo.dart';
+import 'package:web_sqlite_test/database/DBStorageHelper.dart';
+
+import 'DBDirConst.dart';
 
 class DBManager {
   DBManager._();
@@ -17,52 +16,24 @@ class DBManager {
     return _dbManager!;
   }
 
-  DBDirConst currentDBDir = DBDirConst.local;
-
-  Future<List<DBFileInfo>> listWorkspaceDBFile([DBDirConst? dirConst]) async {
-    String dbDirPath = await _getDatabaseDirPath(dirConst);
-    Directory dbDir = Directory(dbDirPath);
-    List<FileSystemEntity> listFileSync = dbDir.listSync();
-    List<DBFileInfo> dbFileInfoList = [];
-    for (FileSystemEntity fileEntity in listFileSync) {
-      String filePath = fileEntity.path;
-      Log.message("application listWorkspaceDBFile : $filePath");
-      String fileExtension = p.extension(filePath);
-      String fileName = p.basenameWithoutExtension(filePath);
-      if (fileExtension.contains(".db")) {
-        dbFileInfoList.add(DBFileInfo(fileName, filePath));
-      }
-    }
-    return dbFileInfoList;
-  }
-
-  Future<String> _getDatabaseDirPath([DBDirConst? dirConst]) async {
-    //创建数据库文件夹
-    //获取应用数据目录
-    Directory rootDirectory = await getApplicationSupportDirectory();
-    String rootPath = rootDirectory.absolute.path;
-    Log.message("application root dir : $rootPath");
-    //创建数据库根目录
-    dirConst ??= currentDBDir;
-    String? dbDirName = DBConstants.dbDirConstMap[dirConst];
-    if (dbDirName == null) {
-      return "";
-    }
-    Directory dbDir = Directory(p.join(rootPath, dbDirName));
-    bool dbDirExists = await dbDir.exists();
-    if (dbDirExists) {
-      Log.message("application db dir exits!");
-    } else {
-      dbDir.createSync();
-      Log.message("application create db dir : ${dbDir.absolute.path}");
-    }
-    return dbDir.path;
-  }
-
-  Future<String> _getDatabaseFilePath(String dbFileName,
+  Future<Database?>? openDatabase(String? databaseName,
       [DBDirConst? dirConst]) async {
-    String dbDirPath = await _getDatabaseDirPath(dirConst);
-    return p.join(dbDirPath, dbFileName);
+    try {
+      if (databaseName == null || databaseName.isEmpty) {
+        return null;
+      }
+      if (!databaseName.endsWith(".db")) {
+        databaseName = "$databaseName.db";
+      }
+      String dbFilePath =
+          await DBStorageHelper.getDatabaseFilePath(databaseName, dirConst);
+      Log.message("application create db file : $dbFilePath");
+      Database database = sqlite3.open(dbFilePath);
+      return database;
+    } catch (exception) {
+      Log.message("application create db error: $exception");
+    }
+    return null;
   }
 
   Future<void> deleteDatabase(String databaseName,
@@ -74,7 +45,8 @@ class DBManager {
       databaseName = "$databaseName.db";
     }
     try {
-      String dbFilePath = await _getDatabaseFilePath(databaseName, dirConst);
+      String dbFilePath =
+          await DBStorageHelper.getDatabaseFilePath(databaseName, dirConst);
       File dbFile = File(dbFilePath);
       dbFile.deleteSync();
     } catch (exception) {
@@ -84,7 +56,7 @@ class DBManager {
 
   Future<void> deleteAllDatabase([DBDirConst? dirConst]) async {
     try {
-      String dbDirPath = await _getDatabaseDirPath(dirConst);
+      String dbDirPath = await DBStorageHelper.getDatabaseDirPath(dirConst);
       Directory dbDir = Directory(dbDirPath);
       List<FileSystemEntity> listFileSync = dbDir.listSync();
       for (FileSystemEntity fileEntity in listFileSync) {
@@ -96,29 +68,4 @@ class DBManager {
       Log.message("application deleteAllDatabase db error: $exception");
     }
   }
-
-  Future<Database?>? openDatabase(String? databaseName,
-      [DBDirConst? dirConst]) async {
-    try {
-      if (databaseName == null || databaseName.isEmpty) {
-        return null;
-      }
-      if (!databaseName.endsWith(".db")) {
-        databaseName = "$databaseName.db";
-      }
-      String dbFilePath = await _getDatabaseFilePath(databaseName, dirConst);
-      Log.message("application create db file : $dbFilePath");
-      Database database = sqlite3.open(dbFilePath);
-      return database;
-    } catch (exception) {
-      Log.message("application create db error: $exception");
-    }
-    return null;
-  }
-}
-
-enum DBDirConst {
-  local,
-  lan,
-  server,
 }

@@ -3,13 +3,16 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:sqlite3/sqlite3.dart' as sql3;
-import 'package:web_sqlite_test/database/DBCommandDialog.dart';
 import 'package:web_sqlite_test/database/DBConstants.dart';
 import 'package:web_sqlite_test/database/DBManager.dart';
+import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/EmptyDataList.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
+import 'package:web_sqlite_test/widget/DBCommandDialog.dart';
+
+import '../database/DBDirConst.dart';
 
 class DatabasePage extends StatefulWidget {
   final OnTabPageCreateListener onTabPageCreateListener;
@@ -32,10 +35,7 @@ class _DatabasePageState extends State<DatabasePage>
   final PopupWindow _moreActionWindow = PopupWindow();
 
   final ValueNotifier<DBDirConst> _currentWorkspace =
-      ValueNotifier(DBManager.getInstance().currentDBDir);
-
-  final List<DBFileInfo> _currentDBList = [];
-  DBFileInfo? _lastConnectDBFileInfo;
+      ValueNotifier(DBDirConst.local);
 
   GlobalKey<LiquidPullToRefreshState> pullToRefreshState = GlobalKey();
 
@@ -45,6 +45,8 @@ class _DatabasePageState extends State<DatabasePage>
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       widget.onTabPageCreateListener(this);
     });
+    _currentWorkspace.value =
+        DBWorkspaceManager.getInstance().getCurrentDBDir();
   }
 
   @override
@@ -68,12 +70,8 @@ class _DatabasePageState extends State<DatabasePage>
                           ConnectionState.done) {
                         if (asyncSnapshot.data != null &&
                             asyncSnapshot.data!.isNotEmpty) {
-                          _currentDBList.clear();
-                          _currentDBList.addAll(
-                              asyncSnapshot.data as Iterable<DBFileInfo>);
                           dataList.addAll(asyncSnapshot.data as Iterable);
                         } else {
-                          _currentDBList.clear();
                           dataList.add(EmptyDataList());
                         }
                       }
@@ -81,7 +79,7 @@ class _DatabasePageState extends State<DatabasePage>
                         padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
                         itemCount: dataList.length,
                         itemBuilder: (buildContext, index) {
-                          dynamic elementAt = dataList.elementAt(index);
+                          dynamic elementAt = dataList[index];
                           if (elementAt is DBFileInfo) {
                             return buildDBFileInfoItemWidget(elementAt);
                           } else if (elementAt is EmptyDataList) {
@@ -177,8 +175,9 @@ class _DatabasePageState extends State<DatabasePage>
                       SpaceWidget.createWidthHeightSpace(10, 50),
                       GestureDetector(
                         onTap: () {
-                          _lastConnectDBFileInfo = dbFileInfo;
-                          DBCommandDialog(dbFileInfo: _lastConnectDBFileInfo!)
+                          DBWorkspaceManager.getInstance()
+                              .setLastConnectDBFile(dbFileInfo);
+                          DBCommandDialog(dbFileInfo: dbFileInfo)
                               .show(context);
                         },
                         child: const RectangleShape(
@@ -270,7 +269,7 @@ class _DatabasePageState extends State<DatabasePage>
   }
 
   Future<List<DBFileInfo>> loadCurrentWorkspaceData() async {
-    return DBManager.getInstance().listWorkspaceDBFile();
+    return DBWorkspaceManager.getInstance().listWorkspaceDBFile();
   }
 
   @override
@@ -389,15 +388,11 @@ class _DatabasePageState extends State<DatabasePage>
       AppDialog appDialog = AppDialog();
       appDialog.show(context, buildWorkspaceDialog());
     } else if (moreAction == exeSqlAction) {
-      if (_lastConnectDBFileInfo == null) {
-        if (_currentDBList.isNotEmpty) {
-          _lastConnectDBFileInfo = _currentDBList.elementAt(0);
-        }
-      }
-      if (_lastConnectDBFileInfo == null) {
+      DBFileInfo? lastConnectDBFile = DBWorkspaceManager.getInstance().getLastConnectDBFile();
+      if (lastConnectDBFile == null) {
         Toast.show(context, "暂无数据");
       } else {
-        DBCommandDialog(dbFileInfo: _lastConnectDBFileInfo!).show(context);
+        DBCommandDialog(dbFileInfo: lastConnectDBFile).show(context);
       }
     } else if (moreAction == refreshDatabaseAction) {
       pullToRefreshState.currentState?.show();
