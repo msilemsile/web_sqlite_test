@@ -60,6 +60,8 @@ dev_dependencies:
   liquid_pull_to_refresh: ^3.0.1
   get: ^4.6.5
   serverpod: ^1.1.1
+  connectivity_plus: ^4.0.1
+  network_info_plus: ^4.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

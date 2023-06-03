@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/database/DBCommandHelper.dart';
-import 'package:web_sqlite_test/model/DBFileInfo.dart';
+import 'package:web_sqlite_test/database/DBManager.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
 class DBCommandDialog extends StatefulWidget {
-  final DBFileInfo dbFileInfo;
+  final String databaseName;
   final AppDialog appDialog = AppDialog();
   late final BuildContext _buildContext;
 
-  DBCommandDialog({super.key, required this.dbFileInfo});
+  DBCommandDialog({super.key, required this.databaseName});
 
   @override
   State<StatefulWidget> createState() {
@@ -35,8 +35,9 @@ class _DBCommandDialogState extends State<DBCommandDialog> {
   void initState() {
     super.initState();
     () async {
-      _dbCommandHelper =
-          await DBCommandHelper.builder(widget.dbFileInfo).openDatabase();
+      _dbCommandHelper = await DBManager.getInstance()
+          .getDBCommandHelper(widget.databaseName)
+          .openDatabase();
     }();
   }
 
@@ -82,7 +83,7 @@ class _DBCommandDialogState extends State<DBCommandDialog> {
         padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
         child: Column(
           children: [
-            Text("当前连接的数据库: ${widget.dbFileInfo.dbFileName}"),
+            Text("当前连接的数据库: ${widget.databaseName}"),
             SpaceWidget.createHeightSpace(10),
             Expanded(
                 child: RectangleShape(

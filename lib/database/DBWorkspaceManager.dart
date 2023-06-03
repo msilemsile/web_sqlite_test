@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_app/flutter_app.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:web_sqlite_test/database/DBStorageHelper.dart';
 
@@ -39,6 +40,11 @@ class DBWorkspaceManager {
 
   DBFileInfo? getLastConnectDBFile() {
     return _lastConnectDBFile;
+  }
+
+  Future<String?> getWifiIP() async {
+    NetworkInfo networkInfo = NetworkInfo();
+    return networkInfo.getWifiIP();
   }
 
   Future<List<DBFileInfo>> listWorkspaceDBFile([DBDirConst? dirConst]) async {

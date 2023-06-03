@@ -4,6 +4,7 @@ import 'package:flutter_app/flutter_app.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:web_sqlite_test/database/DBStorageHelper.dart';
 
+import 'DBCommandHelper.dart';
 import 'DBDirConst.dart';
 
 class DBManager {
@@ -14,6 +15,24 @@ class DBManager {
   static DBManager getInstance() {
     _dbManager ??= DBManager._();
     return _dbManager!;
+  }
+
+  final Map<String, DBCommandHelper> _dbCommandHelperMap = {};
+
+  DBCommandHelper getDBCommandHelper(String databaseName) {
+    DBCommandHelper? commandHelper = _dbCommandHelperMap[databaseName];
+    if (commandHelper == null) {
+      commandHelper = DBCommandHelper.builder(databaseName);
+      _dbCommandHelperMap[databaseName] = DBCommandHelper.builder(databaseName);
+    }
+    return commandHelper;
+  }
+
+  void disposeAllDatabase() {
+    for (DBCommandHelper commandHelper in _dbCommandHelperMap.values) {
+      commandHelper.disposeDatabase();
+    }
+    _dbCommandHelperMap.clear();
   }
 
   Future<Database?>? openDatabase(String? databaseName,

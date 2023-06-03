@@ -1,20 +1,26 @@
-import 'package:web_sqlite_test/database/ExecSqlResult.dart';
+import 'package:web_sqlite_test/database/DBCommandHelper.dart';
+import 'package:web_sqlite_test/database/DBManager.dart';
 
 class JSInterface {
+
   ///打开数据库
-  void openDatabase(String databaseName) {}
-
-  ///断开数据库
-  void disposeDatabase(String databaseName) {}
-
-  ///创建数据库
-  void createDatabase(String databaseName) {
-
+  void openOrCreateDatabase(String databaseName) async {
+    await DBManager.getInstance()
+        .getDBCommandHelper(databaseName)
+        .openDatabase();
   }
 
   ///执行sql数据语句
-  static ExecSqlResult? execSQL(
-      String databaseName, String sql, List<String> params) {
-    return null;
+  void execSQL(String databaseName, String sql,
+      {List<String> params = const [], OnExecSqlCallback? execSqlCallback}) {
+    DBManager.getInstance()
+        .getDBCommandHelper(databaseName)
+        .execSql(sql, params, execSqlCallback);
   }
+
+  ///断开数据库
+  void disposeDatabase(String databaseName) {
+    DBManager.getInstance().getDBCommandHelper(databaseName).disposeDatabase();
+  }
+
 }

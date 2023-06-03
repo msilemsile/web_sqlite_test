@@ -4,29 +4,27 @@ import 'package:flutter_app/flutter_app.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:web_sqlite_test/database/DBManager.dart';
 import 'package:web_sqlite_test/database/ExecSqlResult.dart';
-import 'package:web_sqlite_test/model/DBFileInfo.dart';
 
 typedef OnExecSqlCallback = Function(ExecSqlResult execSqlResult);
 
 class DBCommandHelper {
-  late DBFileInfo _dbFileInfo;
+  late String _databaseName;
   Database? _database;
 
   DBCommandHelper._();
 
-  static DBCommandHelper builder(DBFileInfo dbFileInfo) {
+  static DBCommandHelper builder(String databaseName) {
     DBCommandHelper dbCommandHelper = DBCommandHelper._();
-    dbCommandHelper._dbFileInfo = dbFileInfo;
+    dbCommandHelper._databaseName = databaseName;
     return dbCommandHelper;
   }
 
-  DBFileInfo getDbFileInfo() {
-    return _dbFileInfo;
+  String getDatabaseName() {
+    return _databaseName;
   }
 
   Future<DBCommandHelper> openDatabase() async {
-    _database ??=
-        await DBManager.getInstance().openDatabase(_dbFileInfo.dbFileName);
+    _database ??= await DBManager.getInstance().openDatabase(_databaseName);
     return this;
   }
 
@@ -48,6 +46,7 @@ class DBCommandHelper {
 
   void disposeDatabase() {
     _database?.dispose();
+    _database = null;
   }
 
   static void showExecSqlResult(

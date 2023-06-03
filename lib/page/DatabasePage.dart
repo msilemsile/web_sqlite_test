@@ -177,7 +177,7 @@ class _DatabasePageState extends State<DatabasePage>
                         onTap: () {
                           DBWorkspaceManager.getInstance()
                               .setLastConnectDBFile(dbFileInfo);
-                          DBCommandDialog(dbFileInfo: dbFileInfo)
+                          DBCommandDialog(databaseName: dbFileInfo.dbFileName)
                               .show(context);
                         },
                         child: const RectangleShape(
@@ -392,7 +392,7 @@ class _DatabasePageState extends State<DatabasePage>
       if (lastConnectDBFile == null) {
         Toast.show(context, "暂无数据");
       } else {
-        DBCommandDialog(dbFileInfo: lastConnectDBFile).show(context);
+        DBCommandDialog(databaseName: lastConnectDBFile.dbFileName).show(context);
       }
     } else if (moreAction == refreshDatabaseAction) {
       pullToRefreshState.currentState?.show();
