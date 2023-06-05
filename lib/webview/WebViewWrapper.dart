@@ -65,7 +65,7 @@ class _WebViewWrapperState extends State<WebViewWrapper>
               return NavigationDecision.navigate;
             },
           ),
-        )
+        );
     } else if (Platform.isWindows) {
       () async {
         _winWebController = windows.WebviewController();
