@@ -193,7 +193,7 @@ class _HomePageState extends State<HomePage>
   String buildTabItemName(int tabIndex) {
     if (tabIndex == HomePage.tabBrowser) {
       return "浏览";
-    } else if (tabIndex == HomePage.tabBrowser) {
+    } else if (tabIndex == HomePage.tabDatabase) {
       return "数据";
     } else {
       return "设置";

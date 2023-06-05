@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_app/common/widget/SpaceWidget.dart';
-import 'package:flutter_app/common/widget/Toast.dart';
-import 'package:flutter_app/theme/ThemeProvider.dart';
-import 'package:flutter_app/theme/res/ShapeRes.dart';
+import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/webview/WebViewWrapper.dart';
 
@@ -19,25 +16,23 @@ class BrowserPage extends StatefulWidget {
 }
 
 class _BrowserPageState extends State<BrowserPage>
-    with
-        AutomaticKeepAliveClientMixin,
-        HomeTabTapController,
-        SingleTickerProviderStateMixin {
+    with AutomaticKeepAliveClientMixin, HomeTabTapController {
+  // ,SingleTickerProviderStateMixin {
   WebViewWrapperController? webViewWrapperController;
   TextEditingController urlEditingController = TextEditingController();
   FocusNode urlEditFocusNode = FocusNode();
-  final ValueNotifier<bool> _showHintTextValue = ValueNotifier(true);
   final ValueNotifier<bool> _showClearTextValue = ValueNotifier(false);
-  late AnimationController _urlInputAnimController;
-  late Tween<Offset> _urlInputAnimTween;
+
+  // late AnimationController _urlInputAnimController;
+  // late Tween<Offset> _urlInputAnimTween;
 
   @override
   void initState() {
     super.initState();
-    _urlInputAnimTween =
-        Tween(begin: const Offset(0, -1), end: const Offset(0, 0));
-    _urlInputAnimController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 300));
+    // _urlInputAnimTween =
+    //     Tween(begin: const Offset(0, -1), end: const Offset(0, 0));
+    // _urlInputAnimController = AnimationController(
+    //     vsync: this, duration: const Duration(milliseconds: 300));
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       widget.onTabPageCreateListener(this);
     });
@@ -45,7 +40,7 @@ class _BrowserPageState extends State<BrowserPage>
 
   @override
   void dispose() {
-    _urlInputAnimController.dispose();
+    // _urlInputAnimController.dispose();
     super.dispose();
   }
 
@@ -53,27 +48,20 @@ class _BrowserPageState extends State<BrowserPage>
   Widget build(BuildContext context) {
     super.build(context);
     return WillPopScope(
-        child: Listener(
-          onPointerDown: (_) {
-            if (_urlInputAnimController.isCompleted) {
-              _urlInputAnimController.reverse();
-              urlEditFocusNode.unfocus();
-            }
-          },
-          child: Stack(
-            children: [
-              WebViewWrapper(
-                initUrl: "https://www.baidu.com",
-                wrapperListener: (WebViewWrapperController controller) {
-                  webViewWrapperController = controller;
-                },
-              ),
-              SlideTransition(
-                position: _urlInputAnimController.drive(_urlInputAnimTween),
-                child: buildTopBrowserWidget(),
-              ),
-            ],
-          ),
+        child: Column(
+          children: [
+            buildTopBrowserWidget(),
+            Expanded(child: WebViewWrapper(
+              initUrl: "https://www.baidu.com",
+              wrapperListener: (WebViewWrapperController controller) {
+                webViewWrapperController = controller;
+              },
+            )),
+            // SlideTransition(
+            //   position: _urlInputAnimController.drive(_urlInputAnimTween),
+            //   child: buildTopBrowserWidget(),
+            // ),
+          ],
         ),
         onWillPop: () async {
           bool? canGoBack = await webViewWrapperController?.canGoBack();
@@ -96,13 +84,24 @@ class _BrowserPageState extends State<BrowserPage>
             Row(
               children: [
                 GestureDetector(
-                  onTap: () => loadHomeUrl(),
+                  onTap: () => webGoBack(),
                   child: SizedBox(
-                    width: 50,
+                    width: 40,
                     height: 49,
                     child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Image.asset("images/icon_home.png"),
+                      padding: const EdgeInsets.all(7),
+                      child: Image.asset("images/icon_arrow_left.png"),
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => webReload(),
+                  child: SizedBox(
+                    width: 40,
+                    height: 49,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(6, 8, 12, 8),
+                      child: Image.asset("images/icon_refresh_web.png"),
                     ),
                   ),
                 ),
@@ -113,16 +112,6 @@ class _BrowserPageState extends State<BrowserPage>
                     color: Colors.transparent,
                     child: Stack(
                       children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: ValueListenableBuilder(
-                              valueListenable: _showHintTextValue,
-                              builder: (buildContext, showHintText, child) {
-                                return Visibility(
-                                    visible: showHintText,
-                                    child: const Text("输入浏览地址"));
-                              }),
-                        ),
                         Center(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(0, 0, 30, 0),
@@ -132,16 +121,10 @@ class _BrowserPageState extends State<BrowserPage>
                               },
                               onChanged: (urlEditValue) {
                                 if (urlEditValue.isEmpty) {
-                                  if (!_showHintTextValue.value) {
-                                    _showHintTextValue.value = true;
-                                  }
                                   if (_showClearTextValue.value) {
                                     _showClearTextValue.value = false;
                                   }
                                 } else {
-                                  if (_showHintTextValue.value) {
-                                    _showHintTextValue.value = false;
-                                  }
                                   if (!_showClearTextValue.value) {
                                     _showClearTextValue.value = true;
                                   }
@@ -149,7 +132,8 @@ class _BrowserPageState extends State<BrowserPage>
                               },
                               controller: urlEditingController,
                               focusNode: urlEditFocusNode,
-                              decoration: null,
+                              decoration: const InputDecoration(
+                                  hintText: "输入浏览地址", border: InputBorder.none),
                               keyboardType: TextInputType.url,
                               cursorColor: const Color(0xff1E90FF),
                               style: ThemeProvider.getDefTextStyle(
@@ -168,7 +152,6 @@ class _BrowserPageState extends State<BrowserPage>
                                     onTap: () {
                                       urlEditingController.text = "";
                                       _showClearTextValue.value = false;
-                                      _showHintTextValue.value = true;
                                     },
                                     child: Image.asset(
                                         width: 25,
@@ -213,9 +196,7 @@ class _BrowserPageState extends State<BrowserPage>
     }
     webViewWrapperController?.loadUrl(urlText);
     urlEditingController.text = "";
-    _showHintTextValue.value = true;
     _showClearTextValue.value = false;
-    _urlInputAnimController.reverse();
     urlEditFocusNode.unfocus();
   }
 
@@ -223,35 +204,31 @@ class _BrowserPageState extends State<BrowserPage>
   bool get wantKeepAlive => true;
 
   @override
-  onTabDoubleTap() async {
-    bool? canGoBack = await webViewWrapperController?.canGoBack();
-    if (canGoBack != null && canGoBack) {
-      webViewWrapperController?.goBack();
-    }
+  onTabDoubleTap() {
+    loadHomeUrl();
   }
 
   @override
-  onTabLongTap() {
-    Toast.show(context, "已重新加载当前页");
-    webViewWrapperController?.reload();
-  }
+  onTabLongTap() {}
 
   @override
   onTabTap(bool isChangedTab) {
     if (isChangedTab) {
       return;
     }
-    if (_urlInputAnimController.isAnimating) {
-      return;
-    }
-    if (_urlInputAnimController.isCompleted) {
-      _urlInputAnimController.reverse();
-      urlEditFocusNode.unfocus();
-    } else {
-      _urlInputAnimController.forward();
-      urlEditFocusNode.requestFocus();
-    }
   }
 
   void loadHomeUrl() {}
+
+  void webReload() {
+    Toast.show(context, "已重新加载当前页");
+    webViewWrapperController?.reload();
+  }
+
+  void webGoBack() async {
+    bool? canGoBack = await webViewWrapperController?.canGoBack();
+    if (canGoBack != null && canGoBack) {
+      webViewWrapperController?.goBack();
+    }
+  }
 }
