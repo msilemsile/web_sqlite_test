@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/page/BrowserPage.dart';
 import 'package:web_sqlite_test/page/DatabasePage.dart';
+import 'package:web_sqlite_test/page/SettingPage.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
 class HomePage extends StatefulWidget {
   static const int tabBrowser = 0;
   static const int tabDatabase = 1;
+  static const int tabSetting = 2;
 
   const HomePage({super.key});
 
@@ -23,6 +25,7 @@ class _HomePageState extends State<HomePage>
   final PageController _pageController = PageController();
   HomeTabTapController? _browserTabController;
   HomeTabTapController? _databaseTabController;
+  HomeTabTapController? _settingTabController;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +49,10 @@ class _HomePageState extends State<HomePage>
                     onTabPageCreateListener: (controller) {
                       _databaseTabController = controller;
                     },
-                  )
+                  ),
+                  SettingPage(onTabPageCreateListener: (controller) {
+                    _settingTabController = controller;
+                  })
                 ],
               )),
               SizedBox(
@@ -68,6 +74,9 @@ class _HomePageState extends State<HomePage>
                               Expanded(
                                   child: buildTabItemWidget(
                                       HomePage.tabDatabase, currentTabValue)),
+                              Expanded(
+                                  child: buildTabItemWidget(
+                                      HomePage.tabSetting, currentTabValue)),
                             ],
                           ))
                         ],
@@ -116,6 +125,8 @@ class _HomePageState extends State<HomePage>
           _browserTabController?.onTabTap(isChangedTab);
         } else if (tabIndex == HomePage.tabDatabase) {
           _databaseTabController?.onTabTap(isChangedTab);
+        } else if (tabIndex == HomePage.tabSetting) {
+          _settingTabController?.onTabTap(isChangedTab);
         }
       },
       onDoubleTap: () {
@@ -126,6 +137,8 @@ class _HomePageState extends State<HomePage>
           _browserTabController?.onTabDoubleTap();
         } else if (tabIndex == HomePage.tabDatabase) {
           _databaseTabController?.onTabDoubleTap();
+        } else if (tabIndex == HomePage.tabSetting) {
+          _settingTabController?.onTabDoubleTap();
         }
       },
       onLongPress: () {
@@ -138,6 +151,8 @@ class _HomePageState extends State<HomePage>
           bool isTerminalShow = _terminalShow.value;
           _terminalShow.value = !isTerminalShow;
           _databaseTabController?.onTabLongTap();
+        } else if (tabIndex == HomePage.tabSetting) {
+          _settingTabController?.onTabLongTap();
         }
       },
       child: Column(
@@ -168,16 +183,20 @@ class _HomePageState extends State<HomePage>
   String buildTabItemIconAsset(int tabIndex) {
     if (tabIndex == HomePage.tabBrowser) {
       return "images/icon_browser.png";
-    } else {
+    } else if (tabIndex == HomePage.tabDatabase) {
       return "images/icon_database.png";
+    } else {
+      return "images/icon_setting.png";
     }
   }
 
   String buildTabItemName(int tabIndex) {
     if (tabIndex == HomePage.tabBrowser) {
       return "浏览";
-    } else {
+    } else if (tabIndex == HomePage.tabBrowser) {
       return "数据";
+    } else {
+      return "设置";
     }
   }
 
