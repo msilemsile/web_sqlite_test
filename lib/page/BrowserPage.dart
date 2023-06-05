@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
+import 'package:web_sqlite_test/utils/StorageHelper.dart';
 import 'package:web_sqlite_test/webview/WebViewWrapper.dart';
 
 class BrowserPage extends StatefulWidget {
@@ -52,7 +53,6 @@ class _BrowserPageState extends State<BrowserPage>
           children: [
             buildTopBrowserWidget(),
             Expanded(child: WebViewWrapper(
-              initUrl: "https://www.baidu.com",
               wrapperListener: (WebViewWrapperController controller) {
                 webViewWrapperController = controller;
               },
@@ -189,12 +189,17 @@ class _BrowserPageState extends State<BrowserPage>
       Toast.show(context, "地址不能为空");
       return;
     }
-    if (!urlText.startsWith("file:")) {
-      if (!urlText.startsWith("http")) {
-        urlText = "http://$urlText";
+    ///判断是否是加载home主页
+    if (urlText.compareTo("home") == 0) {
+      loadHomeUrl();
+    } else {
+      if (!urlText.startsWith("file:")) {
+        if (!urlText.startsWith("http")) {
+          urlText = "http://$urlText";
+        }
       }
+      webViewWrapperController?.loadUrl(urlText);
     }
-    webViewWrapperController?.loadUrl(urlText);
     urlEditingController.text = "";
     _showClearTextValue.value = false;
     urlEditFocusNode.unfocus();
@@ -218,7 +223,10 @@ class _BrowserPageState extends State<BrowserPage>
     }
   }
 
-  void loadHomeUrl() {}
+  void loadHomeUrl() async {
+    String homeWebFilePath = await StorageHelper.getHomeWebFilePath();
+    webViewWrapperController?.loadFile(homeWebFilePath);
+  }
 
   void webReload() {
     Toast.show(context, "已重新加载当前页");

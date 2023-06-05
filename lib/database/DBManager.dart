@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_app/flutter_app.dart';
 import 'package:sqlite3/sqlite3.dart';
-import 'package:web_sqlite_test/database/DBStorageHelper.dart';
+import 'package:web_sqlite_test/utils/StorageHelper.dart';
 
 import 'DBCommandHelper.dart';
 import 'DBDirConst.dart';
@@ -45,7 +45,7 @@ class DBManager {
         databaseName = "$databaseName.db";
       }
       String dbFilePath =
-          await DBStorageHelper.getDatabaseFilePath(databaseName, dirConst);
+          await StorageHelper.getDatabaseFilePath(databaseName, dirConst);
       Log.message("application create db file : $dbFilePath");
       Database database = sqlite3.open(dbFilePath);
       return database;
@@ -65,7 +65,7 @@ class DBManager {
     }
     try {
       String dbFilePath =
-          await DBStorageHelper.getDatabaseFilePath(databaseName, dirConst);
+          await StorageHelper.getDatabaseFilePath(databaseName, dirConst);
       File dbFile = File(dbFilePath);
       dbFile.deleteSync();
     } catch (exception) {
@@ -75,7 +75,7 @@ class DBManager {
 
   Future<void> deleteAllDatabase([DBDirConst? dirConst]) async {
     try {
-      String dbDirPath = await DBStorageHelper.getDatabaseDirPath(dirConst);
+      String dbDirPath = await StorageHelper.getDatabaseDirPath(dirConst);
       Directory dbDir = Directory(dbDirPath);
       List<FileSystemEntity> listFileSync = dbDir.listSync();
       for (FileSystemEntity fileEntity in listFileSync) {

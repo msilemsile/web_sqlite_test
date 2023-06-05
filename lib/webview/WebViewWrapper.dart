@@ -13,11 +13,10 @@ typedef WebViewWrapperListener = Function(
     WebViewWrapperController wrapperController);
 
 class WebViewWrapper extends StatefulWidget {
-  final String initUrl;
   final WebViewWrapperListener wrapperListener;
 
   const WebViewWrapper(
-      {super.key, required this.initUrl, required this.wrapperListener});
+      {super.key, required this.wrapperListener});
 
   @override
   State<StatefulWidget> createState() {
@@ -38,7 +37,7 @@ class _WebViewWrapperState extends State<WebViewWrapper>
     if (Platform.isAndroid || Platform.isIOS) {
       _phoneWebController = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..addJavaScriptChannel("webSQL",
+        ..addJavaScriptChannel("websql",
             onMessageReceived: (JavaScriptMessage javaScriptMessage) {
           Log.message(
               "_phoneWebController javascript ${javaScriptMessage.message}");
@@ -67,7 +66,6 @@ class _WebViewWrapperState extends State<WebViewWrapper>
             },
           ),
         )
-        ..loadRequest(Uri.parse(widget.initUrl));
     } else if (Platform.isWindows) {
       () async {
         _winWebController = windows.WebviewController();
@@ -82,7 +80,6 @@ class _WebViewWrapperState extends State<WebViewWrapper>
           Log.message("_winWebController javascript $event");
         });
         await _winWebController.initialize();
-        await _winWebController.loadUrl(widget.initUrl);
         if (!mounted) return;
         setState(() {});
       }();
@@ -102,7 +99,7 @@ class _WebViewWrapperState extends State<WebViewWrapper>
               valueListenable: _progressBarValue,
               builder: (BuildContext context, double progress, _) {
                 return LinearProgressIndicator(
-                  minHeight: 2,
+                  minHeight: 1,
                   backgroundColor: Colors.white,
                   value: progress,
                   color: const Color(0xff1E90FF),
@@ -162,9 +159,20 @@ class _WebViewWrapperState extends State<WebViewWrapper>
       _winWebController.reload();
     }
   }
+
+  @override
+  void loadFile(String filePath) {
+    if (Platform.isAndroid || Platform.isIOS) {
+      _phoneWebController.loadFile(filePath);
+    } else if (Platform.isWindows) {
+      _winWebController.loadUrl(filePath);
+    }
+  }
 }
 
 mixin WebViewWrapperController {
+  void loadFile(String filePath);
+
   void loadUrl(String url);
 
   Future<bool> canGoBack();

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:path/path.dart' as path;
-import 'package:web_sqlite_test/database/DBStorageHelper.dart';
+import 'package:web_sqlite_test/utils/StorageHelper.dart';
 
 import '../model/DBFileInfo.dart';
 import 'DBDirConst.dart';
@@ -48,7 +48,7 @@ class DBWorkspaceManager {
   }
 
   Future<List<DBFileInfo>> listWorkspaceDBFile([DBDirConst? dirConst]) async {
-    String dbDirPath = await DBStorageHelper.getDatabaseDirPath(dirConst);
+    String dbDirPath = await StorageHelper.getDatabaseDirPath(dirConst);
     Directory dbDir = Directory(dbDirPath);
     List<FileSystemEntity> listFileSync = dbDir.listSync();
     List<DBFileInfo> dbFileInfoList = [];

@@ -10,7 +10,7 @@ import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/EmptyDataList.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
-import 'package:web_sqlite_test/widget/DBCommandDialog.dart';
+import 'package:web_sqlite_test/dialog/DBCommandDialog.dart';
 
 import '../database/DBDirConst.dart';
 
