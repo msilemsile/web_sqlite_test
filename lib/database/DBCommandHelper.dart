@@ -3,9 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:web_sqlite_test/database/DBManager.dart';
-import 'package:web_sqlite_test/database/ExecSqlResult.dart';
 
-typedef OnExecSqlCallback = Function(ExecSqlResult execSqlResult);
+typedef OnExecSqlCallback = Function(String execSqlResult);
 
 class DBCommandHelper {
   late String _databaseName;
@@ -23,23 +22,15 @@ class DBCommandHelper {
     return _databaseName;
   }
 
-  Future<DBCommandHelper> openDatabase() async {
+  Future<DBCommandHelper> execSql(String sql,
+      [List<dynamic>? parameters, OnExecSqlCallback? sqlCallback]) async{
     _database ??= await DBManager.getInstance().openDatabase(_databaseName);
-    return this;
-  }
-
-  DBCommandHelper execSql(String sql,
-      [List<Object?> parameters = const [], OnExecSqlCallback? sqlCallback]) {
-    if (_database == null) {
-      sqlCallback?.call(ExecSqlResult.newErrorResult(
-          "database is null || open database error"));
-      return this;
-    }
     try {
+      parameters ??= const [];
       ResultSet? resultSet = _database?.select(sql, parameters);
-      sqlCallback?.call(ExecSqlResult.newSuccessResult(resultSet.toString()));
+      sqlCallback?.call(resultSet.toString());
     } catch (error) {
-      sqlCallback?.call(ExecSqlResult.newErrorResult(error.toString()));
+      sqlCallback?.call(error.toString());
     }
     return this;
   }
@@ -49,15 +40,13 @@ class DBCommandHelper {
     _database = null;
   }
 
-  static void showExecSqlResult(
-      BuildContext context, ExecSqlResult execSqlResult) {
-    String data = execSqlResult.data.toString();
+  static void showExecSqlResult(BuildContext context, String execSqlResult) {
     AppAlertDialog.builder()
-        .setTitle(execSqlResult.code == 0 ? "执行成功" : "执行失败")
-        .setContent(data)
+        .setTitle("执行结果")
+        .setContent(execSqlResult)
         .setCancelTxt("复制")
         .setCancelCallback((alertDialog) {
-      Clipboard.setData(ClipboardData(text: data));
+      Clipboard.setData(ClipboardData(text: execSqlResult));
       Toast.show(context, "复制成功");
     }).show(context);
   }

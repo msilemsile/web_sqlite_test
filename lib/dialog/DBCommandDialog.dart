@@ -34,11 +34,8 @@ class _DBCommandDialogState extends State<DBCommandDialog> {
   @override
   void initState() {
     super.initState();
-    () async {
-      _dbCommandHelper = await DBManager.getInstance()
-          .getDBCommandHelper(widget.databaseName)
-          .openDatabase();
-    }();
+    _dbCommandHelper =
+        DBManager.getInstance().getDBCommandHelper(widget.databaseName);
   }
 
   @override

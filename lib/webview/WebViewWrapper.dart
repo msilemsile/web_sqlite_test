@@ -1,9 +1,9 @@
-import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/common/log/Log.dart';
+import 'package:web_sqlite_test/router/WebSQLRouter.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 // Import for Windows features.
@@ -15,8 +15,7 @@ typedef WebViewWrapperListener = Function(
 class WebViewWrapper extends StatefulWidget {
   final WebViewWrapperListener wrapperListener;
 
-  const WebViewWrapper(
-      {super.key, required this.wrapperListener});
+  const WebViewWrapper({super.key, required this.wrapperListener});
 
   @override
   State<StatefulWidget> createState() {
@@ -38,9 +37,16 @@ class _WebViewWrapperState extends State<WebViewWrapper>
       _phoneWebController = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..addJavaScriptChannel("websql",
-            onMessageReceived: (JavaScriptMessage javaScriptMessage) {
+            onMessageReceived: (JavaScriptMessage javaScriptMessage) async {
           Log.message(
               "_phoneWebController javascript ${javaScriptMessage.message}");
+          WebSQLRouter.route(javaScriptMessage.message,
+              callback: (routerResult, [routerId]) {
+            routerId ??= "0";
+            _phoneWebController.runJavaScript(
+                "onWebSQLCallback('$routerId','$routerResult')");
+            Log.message("_phoneWebController WebSQLRouter.route $routerResult");
+          });
         })
         ..setNavigationDelegate(
           NavigationDelegate(
@@ -69,9 +75,7 @@ class _WebViewWrapperState extends State<WebViewWrapper>
     } else if (Platform.isWindows) {
       () async {
         _winWebController = windows.WebviewController();
-        _winWebController.loadingState.listen((event) {
-
-        });
+        _winWebController.loadingState.listen((event) {});
         _winWebController.historyChanged.listen((event) {
           _winWebCanGoBack = event.canGoBack;
           Log.message("_winWebController historyChange $event");

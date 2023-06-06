@@ -23,10 +23,10 @@ abstract class DBConstants {
         dbTitle = "本地数据";
         break;
       case DBDirConst.lan:
-        dbTitle = "局域网数据(只读)";
+        dbTitle = "局域网数据";
         break;
       case DBDirConst.server:
-        dbTitle = "服务器数据(只读)";
+        dbTitle = "服务器数据";
         break;
     }
     return dbTitle;
