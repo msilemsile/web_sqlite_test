@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -43,8 +45,9 @@ class _WebViewWrapperState extends State<WebViewWrapper>
           WebSQLRouter.route(javaScriptMessage.message,
               callback: (routerResult, [routerId]) {
             routerId ??= "0";
+            routerResult = base64Encode(Uint8List.fromList(routerResult.codeUnits));
             _phoneWebController.runJavaScript(
-                "onWebSQLCallback('$routerId','$routerResult')");
+                "onWebSQLCallback('$routerResult','$routerId')");
             Log.message("_phoneWebController WebSQLRouter.route $routerResult");
           });
         })
@@ -172,9 +175,21 @@ class _WebViewWrapperState extends State<WebViewWrapper>
       _winWebController.loadUrl(filePath);
     }
   }
+
+  @override
+  void loadAsset(String filePath) {
+    if (Platform.isAndroid || Platform.isIOS) {
+      _phoneWebController.loadFlutterAsset(filePath);
+    } else if (Platform.isWindows) {
+      _winWebController.loadUrl(filePath);
+    }
+  }
 }
 
 mixin WebViewWrapperController {
+
+  void loadAsset(String filePath);
+
   void loadFile(String filePath);
 
   void loadUrl(String url);

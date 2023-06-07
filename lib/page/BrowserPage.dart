@@ -6,9 +6,13 @@ import 'package:web_sqlite_test/utils/StorageHelper.dart';
 import 'package:web_sqlite_test/webview/WebViewWrapper.dart';
 
 class BrowserPage extends StatefulWidget {
+  final String initUrl;
   final OnTabPageCreateListener onTabPageCreateListener;
 
-  const BrowserPage({super.key, required this.onTabPageCreateListener});
+  const BrowserPage(
+      {super.key,
+      required this.onTabPageCreateListener,
+      required this.initUrl});
 
   @override
   State<StatefulWidget> createState() {
@@ -55,6 +59,8 @@ class _BrowserPageState extends State<BrowserPage>
             Expanded(child: WebViewWrapper(
               wrapperListener: (WebViewWrapperController controller) {
                 webViewWrapperController = controller;
+                urlEditingController.text = widget.initUrl;
+                loadWebUrl();
               },
             )),
             // SlideTransition(
@@ -189,6 +195,7 @@ class _BrowserPageState extends State<BrowserPage>
       Toast.show(context, "地址不能为空");
       return;
     }
+
     ///判断是否是加载home主页
     if (urlText.compareTo("home") == 0) {
       loadHomeUrl();
@@ -210,11 +217,13 @@ class _BrowserPageState extends State<BrowserPage>
 
   @override
   onTabDoubleTap() {
-    loadHomeUrl();
+    webReload();
   }
 
   @override
-  onTabLongTap() {}
+  onTabLongTap() {
+    loadHomeUrl();
+  }
 
   @override
   onTabTap(bool isChangedTab) {
@@ -223,9 +232,9 @@ class _BrowserPageState extends State<BrowserPage>
     }
   }
 
-  void loadHomeUrl() async {
-    String homeWebFilePath = await StorageHelper.getHomeWebFilePath();
-    webViewWrapperController?.loadFile(homeWebFilePath);
+  void loadHomeUrl() {
+    String homeWebFilePath = StorageHelper.getHomeWebAssetKey();
+    webViewWrapperController?.loadAsset(homeWebFilePath);
   }
 
   void webReload() {

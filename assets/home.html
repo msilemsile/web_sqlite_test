@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>web_sql_test</title>
+    <script src="./base64.min.js"></script>
+    <script>
+        ///路由协议格式
+        ///websql://host?action=xxx&data={jsonData}
+
+        function execSQL(routerId,databaseName,sql,params){
+            try {
+                const jsonDataParamsMap = new Map().set("databaseName",databaseName)
+                                        .set("sql",sql)
+                                        .set("sqlParams",params);
+                window.websql.postMessage(buildWebSQLRoute(routerId,'execSQL',jsonDataParamsMap));
+            } catch(e) {
+                showAlert('执行sql失败');
+            }
+        }
+
+        //js回调函数
+        function onWebSQLCallback(routerResult,routerId){
+            routerResult = Base64.decode(routerResult);
+            console.log("onWebSQLCallback: routerId "+routerId +"\n"+"routerResult: "+routerResult);
+            showAlert("routerId =  "+routerId +"\n"+"routerResult = "+routerResult)
+        }
+
+        function mapToJson(map) {
+            return JSON.stringify(mapToObj(map));
+        }
+
+        function jsonToMap(jsonStr) {
+            return objToMap(JSON.parse(jsonStr));
+        }
+
+        function mapToObj(map) {
+            let obj = Object.create(null);
+            for (let [k,v] of map) {
+                obj[k] = v;
+            }
+            return obj;
+        }
+
+        function objToMap(obj) {
+            let map = new Map();
+            for (let k of Object.keys(obj)) {
+                map.set(k, obj[k]);
+            }
+            return map;
+        }
+
+        function buildWebSQLRoute(routerId,actionParamsName,jsonDataParamsMap){
+            const routerSchema = "websql://"
+            const routerHost = "host"
+            const routerAction = "action="
+            const routerJsonData = "data="
+            const routerIdConst = "routerId="
+            return routerSchema + routerHost + "?" 
+            + routerAction + actionParamsName + "&" 
+            + routerJsonData + encodeURIComponent(mapToJson(jsonDataParamsMap)) + "&"
+            + routerIdConst + routerId;
+        }
+
+        function showAlert(msg) {
+            setTimeout(function () {
+                alert(msg)
+            }, 100)
+        }
+    </script>
+</head>
+<body style="display: flex;justify-content: center;flex-direction: column;align-items: center;">
+    <div style="display: flex;align-items: center;">
+        <img src="./imgs/icon_browser.png" width="50" height="50">
+        <p style="font-weight: bold;color: #1E90FF;">welcome to web sql test</p>
+        <img src="./imgs/icon_database.png" width="50" height="50">
+    </div>
+    <br>
+    <p>web sql api使用</p>
+    <br>
+    <p>自定义协议传输 协议格式如下:</p>
+    <br>
+    <p>websql://host?action=xxx&data={jsonData}</p>
+    <br>
+    <p>使用window.websql.postMessage("自定义协议")</p>
+    <br>
+    <div>执行SQL语句</div>
+    <br>
+    <p>1.execSQL('web_sql_test','create table if not exists User(id int primary key,name text,age int);',[]);</p>
+    <button onclick="execSQL('1','web_sql_test','create table if not exists User(id int primary key,name text,age int);',[])">执行</button>
+    <br>
+    <p>2.execSQL('web_sql_test','insert into User (name,age) values (\'zhangsan\',\'18\');',[]);</p>
+    <button onclick="execSQL('2','web_sql_test','insert into User (name,age) values (\'zhangsan\',\'18\');',[])">执行</button>
+    <br>
+    <p>3.execSQL('web_sql_test','select * from User;',[]);</p>
+    <button onclick="execSQL('3','web_sql_test','select * from User;',[])">执行</button>
+    <br>
+    <br>
+</body>
+</html>

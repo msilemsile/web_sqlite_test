@@ -26,6 +26,10 @@ class StorageHelper {
     return p.join(homeDir.path, "home.html");
   }
 
+  static String getHomeWebAssetKey() {
+    return "assets/home.html";
+  }
+
   static Future<String> getDatabaseDirPath([DBDirConst? dirConst]) async {
     //创建数据库文件夹
     //获取应用数据目录

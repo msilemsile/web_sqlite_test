@@ -60,6 +60,10 @@ class DBManager {
     if (databaseName.isEmpty) {
       return;
     }
+    DBCommandHelper? commandHelper = _dbCommandHelperMap[databaseName];
+    if (commandHelper != null) {
+      commandHelper.disposeDatabase();
+    }
     if (!databaseName.endsWith(".db")) {
       databaseName = "$databaseName.db";
     }

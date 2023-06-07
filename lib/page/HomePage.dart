@@ -41,6 +41,7 @@ class _HomePageState extends State<HomePage>
                 controller: _pageController,
                 children: [
                   BrowserPage(
+                    initUrl: "home",
                     onTabPageCreateListener: (controller) {
                       _browserTabController = controller;
                     },
