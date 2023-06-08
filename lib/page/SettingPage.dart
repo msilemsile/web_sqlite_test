@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
+import 'package:web_sqlite_test/service/LanBroadcastService.dart';
+import 'package:web_sqlite_test/theme/AppColors.dart';
 
 class SettingPage extends StatefulWidget {
   final OnTabPageCreateListener onTabPageCreateListener;
@@ -16,6 +18,8 @@ class SettingPage extends StatefulWidget {
 
 class _SettingPageState extends State<SettingPage>
     with AutomaticKeepAliveClientMixin, HomeTabTapController {
+  final ValueNotifier<bool> _lanBroadcastControl = ValueNotifier(false);
+
   @override
   void initState() {
     super.initState();
@@ -29,7 +33,63 @@ class _SettingPageState extends State<SettingPage>
     super.build(context);
     return Column(
       children: [
-        buildSettingTitleWidget()
+        buildSettingTitleWidget(),
+        ValueListenableBuilder(
+            valueListenable: _lanBroadcastControl,
+            builder: (context, controlValue, child) {
+              return SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: Stack(
+                  children: [
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                        child: Text(
+                          "局域网数据库互操作",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: AppColors.mainColor),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 0, 20, 0),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Switch(
+                              value: controlValue,
+                              onChanged: (newValue) {
+                                _lanBroadcastControl.value = newValue;
+                                if (newValue) {
+                                  LanBroadcastService.getInstance()
+                                      .startBroadcast()
+                                  .then((value) {
+                                    value.listenBroadcast((result) {
+                                      Log.message("listenBroadcast result = $result");
+                                    });
+                                  });
+                                } else {
+                                  LanBroadcastService.getInstance()
+                                      .stopBroadcast();
+                                }
+                              }),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: SpaceWidget.createHeightSpace(1,
+                          spaceColor: AppColors.lineColor),
+                    )
+                  ],
+                ),
+              );
+            })
       ],
     );
   }

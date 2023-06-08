@@ -89,7 +89,7 @@ class WebSQLRouter {
         host: RouterConstants.constHost,
         queryParameters: {
           RouterConstants.constParamAction: actionName,
-          RouterConstants.constParamData: jsonData
+          RouterConstants.constParamData: Uri.encodeComponent(jsonData)
         });
     return uri.toString();
   }
