@@ -14,6 +14,8 @@ android | ios | windows
 
 4.提供http协议下sqlite API(开发中...)
 
+5.客户端和局域网或者服务端数据同步(设计中...)
+
 示例如下：
 
 ![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/browser.png)

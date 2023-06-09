@@ -66,7 +66,7 @@ packages:
     source: hosted
     version: "1.17.1"
   connectivity_plus:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: connectivity_plus
       sha256: "8599ae9edca5ff96163fca3e36f8e481ea917d1e71cdad912c084b5579913f34"
@@ -114,7 +114,7 @@ packages:
     source: hosted
     version: "0.7.8"
   drift:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: drift
       sha256: "21abd7b1c1a637a264f58f9f05c7b910d29c204aab1cbfcb4d9fada1e98a9303"
@@ -122,7 +122,7 @@ packages:
     source: hosted
     version: "2.8.0"
   english_words:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: english_words
       sha256: "6a7ef6473a97bd8571b6b641d006a6e58a7c67e65fb6f3d6d1151cb46b0e983c"
@@ -183,9 +183,9 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_app:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
-      path: "../flutter_app"
+      path: "dependencies/flutter_app"
       relative: true
     source: path
     version: "0.0.1"
@@ -208,7 +208,7 @@ packages:
     source: sdk
     version: "0.0.0"
   get:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: get
       sha256: "2ba20a47c8f1f233bed775ba2dd0d3ac97b4cf32fc17731b3dfc672b06b0e92a"
@@ -248,7 +248,7 @@ packages:
     source: hosted
     version: "2.1.0"
   liquid_pull_to_refresh:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: liquid_pull_to_refresh
       sha256: "11e4cd8c5460085a31b479ec4e1cd063eb8e599f35684d57a44dafa1fd1f67f3"
@@ -288,7 +288,7 @@ packages:
     source: hosted
     version: "2.0.0"
   network_info_plus:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: network_info_plus
       sha256: "5a79c244070fb7f7d10fbcfa24eed315252b4e662f42658029871d31afdbba9e"
@@ -320,7 +320,7 @@ packages:
     source: hosted
     version: "1.8.3"
   path_provider:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: path_provider
       sha256: "3087813781ab814e4157b172f1a11c46be20179fcc9bea043e0fba36bc0acaa2"
@@ -472,7 +472,7 @@ packages:
     source: hosted
     version: "1.0.2"
   serverpod:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: serverpod
       sha256: "0e187a03a7f97205fb415523ae18b96b683dafe52345d8c2248f2dc343a7040a"
@@ -525,7 +525,7 @@ packages:
     source: hosted
     version: "1.9.1"
   sqlite3:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: sqlite3
       sha256: "2cef47b59d310e56f8275b13734ee80a9cf4a48a43172020cb55a620121fbf66"
@@ -533,7 +533,7 @@ packages:
     source: hosted
     version: "1.11.1"
   sqlite3_flutter_libs:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: sqlite3_flutter_libs
       sha256: "1e20a88d5c7ae8400e009f38ddbe8b001800a6dffa37832481a86a219bc904c7"
@@ -621,7 +621,7 @@ packages:
     source: hosted
     version: "0.2.0"
   uuid:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: uuid
       sha256: "648e103079f7c64a36dc7d39369cabb358d377078a051d6ae2ad3aa539519313"
@@ -653,16 +653,16 @@ packages:
     source: hosted
     version: "2.4.0"
   webview_flutter:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
-      path: "../webview_flutter-4.2.0"
+      path: "dependencies/webview_flutter-4.2.0"
       relative: true
     source: path
     version: "4.2.0"
   webview_flutter_android:
     dependency: transitive
     description:
-      path: "../webview_flutter_android-3.7.0"
+      path: "dependencies/webview_flutter_android-3.7.0"
       relative: true
     source: path
     version: "3.7.0"
@@ -683,7 +683,7 @@ packages:
     source: hosted
     version: "3.4.3"
   webview_windows:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: webview_windows
       sha256: a6d76f9f020e638c2e5417f473e2907c097d1fe3eac8bd4be7517bc3a0df6b86

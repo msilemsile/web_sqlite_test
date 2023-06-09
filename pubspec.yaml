@@ -35,6 +35,22 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
+  english_words: ^4.0.0
+  uuid: ^3.0.6
+  path_provider: ^2.0.15
+  sqlite3_flutter_libs: ^0.5.15
+  sqlite3: ^1.11.1
+  drift: ^2.8.0
+  webview_flutter:
+    path: ./dependencies/webview_flutter-4.2.0
+  webview_windows: ^0.2.2
+  flutter_app:
+    path: ./dependencies/flutter_app
+  liquid_pull_to_refresh: ^3.0.1
+  get: ^4.6.5
+  serverpod: ^1.1.1
+  connectivity_plus: ^4.0.1
+  network_info_plus: ^4.0.1
 
 dev_dependencies:
   flutter_test:
@@ -46,22 +62,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
-  english_words: ^4.0.0
-  uuid: ^3.0.6
-  path_provider: ^2.0.15
-  sqlite3_flutter_libs: ^0.5.15
-  sqlite3: ^1.11.1
-  drift: ^2.8.0
-  webview_flutter:
-    path: ../webview_flutter-4.2.0
-  webview_windows: ^0.2.2
-  flutter_app:
-    path: ../flutter_app
-  liquid_pull_to_refresh: ^3.0.1
-  get: ^4.6.5
-  serverpod: ^1.1.1
-  connectivity_plus: ^4.0.1
-  network_info_plus: ^4.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
