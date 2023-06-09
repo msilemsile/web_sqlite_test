@@ -13,18 +13,14 @@ class AppToast {
 
   ///展示toast
   static void show(String text,
-      [BuildContext? context, int length = lengthShort, double offsetY = -1]) {
-    context ??= AppManager.getInstance().getCurrentContext();
-    if (context == null) {
-      return;
-    }
+      [int length = lengthShort, double offsetY = -1]) {
     OverlayEntry toastOverLayEntry = OverlayEntry(builder: (context) {
       return _ToastWidget(
         text: text,
         offsetY: offsetY,
       );
     });
-    Overlay.of(context).insert(toastOverLayEntry);
+    AppManager.getInstance().getOverlay()?.insert(toastOverLayEntry);
     _startToastDismissTask(toastOverLayEntry, length);
   }
 

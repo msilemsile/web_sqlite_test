@@ -16,7 +16,12 @@ class AppManager {
     return _globalNaviStateKey;
   }
 
-  BuildContext? getCurrentContext() {
-    return _globalNaviStateKey.currentContext;
+  BuildContext? getContext() {
+    return _globalNaviStateKey.currentState?.overlay?.context;
+  }
+
+
+  OverlayState? getOverlay() {
+    return _globalNaviStateKey.currentState?.overlay;
   }
 }

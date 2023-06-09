@@ -150,7 +150,7 @@ void changeTheme(BuildContext context) {
 
 ///弹出toast
 void showToast(BuildContext context) {
-  AppToast.show("custom toast", context);
+  AppToast.show("custom toast");
 }
 
 ///展示loading[控件级别](3s消失)
