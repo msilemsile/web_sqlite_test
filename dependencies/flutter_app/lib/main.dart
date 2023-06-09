@@ -7,9 +7,10 @@ import 'package:flutter_app/common/page/BaseLoadingPage.dart';
 import 'package:flutter_app/common/widget/AppAlertDialog.dart';
 import 'package:flutter_app/common/widget/AppDialog.dart';
 import 'package:flutter_app/common/widget/AppLoading.dart';
+import 'package:flutter_app/common/widget/AppToast.dart';
 import 'package:flutter_app/common/widget/PageLoading.dart';
 import 'package:flutter_app/common/widget/PopupWindow.dart';
-import 'package:flutter_app/common/widget/Toast.dart';
+import 'package:flutter_app/core/AppManager.dart';
 import 'package:flutter_app/theme/res/ColorsKey.dart';
 import 'package:flutter_app/theme/res/ShapeRes.dart';
 
@@ -21,20 +22,13 @@ void main() {
     Log.message(errorDetail);
   };
   runZoned(() {
-    ///start with WidgetsApp
-    runApp(WidgetsApp(
+    ///start with MaterialApp
+    runApp(MaterialApp(
+      navigatorKey: AppManager.getInstance().globalNaviStateKey(),
       builder: (BuildContext context, Widget? widget) {
         return ThemeProvider(
             initThemeType: ThemeProvider.typeLight, child: widget!);
       },
-      pageRouteBuilder: <T>(RouteSettings settings, WidgetBuilder builder) =>
-          PageRouteBuilder(
-            settings: settings,
-            pageBuilder: (BuildContext context, Animation<double> animation,
-                Animation<double> secondaryAnimation) =>
-                builder(context),
-          ),
-      color: Colors.transparent,
       home: Builder(
         builder: (BuildContext context) {
           return BaseLoadingPage(
@@ -44,18 +38,30 @@ void main() {
         },
       ),
     ));
-    ///start with MaterialApp
-    // runApp(MaterialApp(
+
+    ///start with WidgetsApp
+    // runApp(WidgetsApp(
+    //   navigatorKey: AppManager.getInstance().globalNaviStateKey(),
     //   builder: (BuildContext context, Widget? widget) {
     //     return ThemeProvider(
     //         initThemeType: ThemeProvider.typeLight, child: widget!);
     //   },
-    //   home: Builder(builder: (BuildContext context){
-    //     return BaseLoadingPage(
-    //       textColor: ThemeProvider.getColor(context, ColorsKey.bgLightMode),
-    //       child: buildChild(),
-    //     );
-    //   },),
+    //   pageRouteBuilder: <T>(RouteSettings settings, WidgetBuilder builder) =>
+    //       PageRouteBuilder(
+    //         settings: settings,
+    //         pageBuilder: (BuildContext context, Animation<double> animation,
+    //             Animation<double> secondaryAnimation) =>
+    //             builder(context),
+    //       ),
+    //   color: Colors.transparent,
+    //   home: Builder(
+    //     builder: (BuildContext context) {
+    //       return BaseLoadingPage(
+    //         textColor: ThemeProvider.getColor(context, ColorsKey.bgLightMode),
+    //         child: buildChild(),
+    //       );
+    //     },
+    //   ),
     // ));
   }, zoneSpecification: ZoneSpecification(handleUncaughtError: (Zone self,
       ZoneDelegate parent, Zone zone, Object error, StackTrace stackTrace) {
@@ -144,7 +150,7 @@ void changeTheme(BuildContext context) {
 
 ///弹出toast
 void showToast(BuildContext context) {
-  Toast.show(context, "custom toast");
+  AppToast.show("custom toast", context);
 }
 
 ///展示loading[控件级别](3s消失)
@@ -187,7 +193,7 @@ void showDialog(BuildContext context) {
       ),
     ),
     onTap: () {
-      Toast.show(context, "click dialog");
+      AppToast.show("click dialog");
     },
   );
   dialog.show(context, dialogWidget);
@@ -237,7 +243,7 @@ Widget buildPopupWindowsItem(
       ),
     ),
     onTap: () {
-      Toast.show(context, "PopWindowItem$index");
+      AppToast.show("PopWindowItem$index");
       itemClick();
     },
   );

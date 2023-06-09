@@ -17,4 +17,4 @@ export 'common/widget/DragWidget.dart';
 export 'common/widget/PageLoading.dart';
 export 'common/widget/PopupWindow.dart';
 export 'common/widget/SpaceWidget.dart';
-export 'common/widget/Toast.dart';
+export 'common/widget/AppToast.dart';

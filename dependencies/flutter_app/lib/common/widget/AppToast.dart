@@ -1,18 +1,23 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_app/core/AppManager.dart';
 import 'package:flutter_app/theme/ThemeProvider.dart';
 import 'package:flutter_app/theme/res/ColorsKey.dart';
 import 'package:flutter_app/theme/res/ShapeRes.dart';
 
 ///Toast
-class Toast {
+class AppToast {
   static const int lengthShort = 0;
   static const int lengthLong = 1;
 
   ///展示toast
-  static void show(BuildContext context, String text,
-      [int length = lengthShort, double offsetY = -1]) {
+  static void show(String text,
+      [BuildContext? context, int length = lengthShort, double offsetY = -1]) {
+    context ??= AppManager.getInstance().getCurrentContext();
+    if (context == null) {
+      return;
+    }
     OverlayEntry toastOverLayEntry = OverlayEntry(builder: (context) {
       return _ToastWidget(
         text: text,
@@ -62,14 +67,17 @@ class _ToastWidget extends StatelessWidget {
             child: Center(
               child: RectangleShape(
                 cornerAll: 3,
-                solidColor: ThemeProvider.getColor(context, ColorsKey.bgDarkMode),
+                solidColor:
+                    ThemeProvider.getColor(context, ColorsKey.bgDarkMode),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                   child: DefaultTextStyle(
                     style: ThemeProvider.getPlatformTextStyle(context),
                     child: Text(
                       text,
-                      style: TextStyle(color: ThemeProvider.getColor(context, ColorsKey.bgLightMode)),
+                      style: TextStyle(
+                          color: ThemeProvider.getColor(
+                              context, ColorsKey.bgLightMode)),
                     ),
                   ),
                 ),

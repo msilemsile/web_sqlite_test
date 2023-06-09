@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:flutter_app/theme/ThemeProvider.dart';
+import 'package:flutter_app/core/AppManager.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 
 void main() {
@@ -15,6 +16,7 @@ void main() {
   runZoned(() {
     ///start with MaterialApp
     runApp(MaterialApp(
+      navigatorKey: AppManager.getInstance().globalNaviStateKey(),
       builder: (BuildContext context, Widget? widget) {
         return ThemeProvider(
             initThemeType: ThemeProvider.typeLight, child: widget!);

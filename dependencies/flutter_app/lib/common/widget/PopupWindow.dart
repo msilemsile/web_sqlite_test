@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/common/page/BasePopCallbackPage.dart';
-import 'package:flutter_app/common/widget/Toast.dart';
+import 'package:flutter_app/common/widget/AppToast.dart';
 
 import '../route/TransparentPageRoute.dart';
 
@@ -14,7 +14,7 @@ class PopupWindow {
       {double offsetX = 0, double offsetY = 0}) {
     var renderObject = context.findRenderObject();
     if (renderObject == null) {
-      Toast.show(context, "获取弹窗位置失败!");
+      AppToast.show("获取弹窗位置失败!");
     } else {
       RenderBox renderBox = renderObject as RenderBox;
       Size size = renderBox.size;

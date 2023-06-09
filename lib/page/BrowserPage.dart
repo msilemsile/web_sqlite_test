@@ -192,7 +192,7 @@ class _BrowserPageState extends State<BrowserPage>
   void loadWebUrl() {
     String urlText = urlEditingController.text;
     if (urlText.isEmpty) {
-      Toast.show(context, "地址不能为空");
+      AppToast.show("地址不能为空");
       return;
     }
 
@@ -238,7 +238,7 @@ class _BrowserPageState extends State<BrowserPage>
   }
 
   void webReload() {
-    Toast.show(context, "已重新加载当前页");
+    AppToast.show("已重新加载当前页");
     webViewWrapperController?.reload();
   }
 

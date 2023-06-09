@@ -47,7 +47,7 @@ class DBCommandHelper {
         .setCancelTxt("复制")
         .setCancelCallback((alertDialog) {
       Clipboard.setData(ClipboardData(text: execSqlResult));
-      Toast.show(context, "复制成功");
+      AppToast.show("复制成功");
     }).show(context);
   }
 }

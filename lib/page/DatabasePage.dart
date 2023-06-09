@@ -390,7 +390,7 @@ class _DatabasePageState extends State<DatabasePage>
     } else if (moreAction == exeSqlAction) {
       DBFileInfo? lastConnectDBFile = DBWorkspaceManager.getInstance().getLastConnectDBFile();
       if (lastConnectDBFile == null) {
-        Toast.show(context, "暂无数据");
+        AppToast.show("暂无数据");
       } else {
         DBCommandDialog(databaseName: lastConnectDBFile.dbFileName).show(context);
       }
@@ -406,7 +406,7 @@ class _DatabasePageState extends State<DatabasePage>
           .setConfirmCallback((_) async {
         String dbName = editingController.text.toString().trim();
         if (dbName.isEmpty) {
-          Toast.show(context, "数据库名称不能为空");
+          AppToast.show("数据库名称不能为空");
         } else {
           sql3.Database? database =
               await DBManager.getInstance().openDatabase(dbName);

@@ -149,7 +149,7 @@ class _DBCommandDialogState extends State<DBCommandDialog> {
           onTap: () {
             String sqlExec = editingController.text.toString().trim();
             if (sqlExec.isEmpty) {
-              Toast.show(context, "sql命令不能为空");
+              AppToast.show("sql命令不能为空");
               return;
             } else {
               _dbCommandHelper?.execSql(sqlExec, const [], (execSqlResult) {
