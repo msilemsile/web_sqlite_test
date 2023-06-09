@@ -30,7 +30,8 @@ class WebSQLRouter {
     String? paramAction = parameters[RouterConstants.constParamAction];
     String? paramData = parameters[RouterConstants.constParamData];
     String? paramRouterId = parameters[RouterConstants.constParamRouterId];
-    Log.message("WebSQLRouter route parse url \n paramsAction: $paramAction \n paramsData: $paramData \n paramRouterId: $paramRouterId");
+    Log.message(
+        "WebSQLRouter route parse url \n paramsAction: $paramAction \n paramsData: $paramData \n paramRouterId: $paramRouterId");
     _handleRouteAction(paramAction, paramData, paramRouterId, callback);
   }
 
@@ -81,8 +82,8 @@ class WebSQLRouter {
     }
   }
 
-  static String buildWebSQLRoute(
-      String actionName, Map<String, String> paramsMap) {
+  static String buildWebSQLRoute(String actionName,
+      [Map<String, String>? paramsMap = const {}]) {
     String jsonData = json.encode(paramsMap).toString();
     Uri uri = Uri(
         scheme: RouterConstants.constScheme,

@@ -1,16 +1,15 @@
 # web_sqlite_test
 
-A new Flutter project.
+跨平台sqlite使用,一个示例
 
-## Getting Started
+android | ios | windows
 
-This project is a starting point for a Flutter application.
+功能：
 
-A few resources to get you started if this is your first Flutter project:
+1.跨平台sqlite
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+2.提供web端使用sqlite API
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+3.局域网下sqlite互操作(开发中...)
+
+4.提供http协议下sqlite API(开发中...)

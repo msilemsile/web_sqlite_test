@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
-import 'package:web_sqlite_test/router/WebSQLRouter.dart';
-import 'package:web_sqlite_test/service/LanConnectService.dart';
+import 'package:web_sqlite_test/router/RouterConstants.dart';
 
 typedef OnLanBroadcastCallback = Function(String result);
 
@@ -58,11 +58,14 @@ class LanBroadcastService {
       Log.message("_sendBroadcast start");
       for (int i = 1; i < 255; i++) {
         if (i.toString().compareTo(splitIP[3]) != 0) {
-          _broadcastSocket?.send(buildSendBroadcastData(localWifiIP),
+          Uint8List uint8list = Uint8List.fromList(
+              RouterConstants.buildSocketConnectRoute(localWifiIP).codeUnits);
+          _broadcastSocket?.send(uint8list,
               InternetAddress("$needBroadcastIP$i"), broadcastListenPort);
         }
       }
-      Log.message("_sendBroadcast success end ip range: [$needBroadcastIP.1 - $needBroadcastIP.254]");
+      Log.message(
+          "_sendBroadcast success end ip range: [$needBroadcastIP.1 - $needBroadcastIP.254]");
     });
   }
 
@@ -72,24 +75,17 @@ class LanBroadcastService {
     }
     _broadcastSocket?.listen((RawSocketEvent socketEvent) {
       Log.message("listenBroadcast socketEvent:  $socketEvent");
-      Datagram? datagram = _broadcastSocket?.receive();
-      if (datagram != null) {
-        String receiveData = String.fromCharCodes(datagram.data);
-        Log.message("listenBroadcast receiveData:  $receiveData");
-        for (OnLanBroadcastCallback callback in _callbackList) {
-          callback(receiveData);
+      if (socketEvent == RawSocketEvent.read) {
+        Datagram? datagram = _broadcastSocket?.receive();
+        if (datagram != null) {
+          String receiveData = String.fromCharCodes(datagram.data);
+          Log.message("listenBroadcast receiveData:  $receiveData");
+          for (OnLanBroadcastCallback callback in _callbackList) {
+            callback(receiveData);
+          }
         }
       }
     });
-  }
-
-  List<int> buildSendBroadcastData(String ip) {
-    String webSQLRoute = WebSQLRouter.buildWebSQLRoute("bind", {
-      "wifiIP": ip,
-      "port": LanConnectService.connectListenPort.toString(),
-      "platform": Platform.operatingSystem
-    });
-    return webSQLRoute.codeUnits;
   }
 
   void stopBroadcast() {

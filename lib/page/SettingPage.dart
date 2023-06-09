@@ -68,9 +68,10 @@ class _SettingPageState extends State<SettingPage>
                                 if (newValue) {
                                   LanBroadcastService.getInstance()
                                       .startBroadcast()
-                                  .then((value) {
+                                      .then((value) {
                                     value.listenBroadcast((result) {
-                                      Log.message("listenBroadcast result = $result");
+                                      Log.message(
+                                          "listenBroadcast result = $result");
                                     });
                                   });
                                 } else {
