@@ -19,6 +19,7 @@ class SettingPage extends StatefulWidget {
 class _SettingPageState extends State<SettingPage>
     with AutomaticKeepAliveClientMixin, HomeTabTapController {
   final ValueNotifier<bool> _lanBroadcastControl = ValueNotifier(false);
+  final ValueNotifier<bool> _httpDBControl = ValueNotifier(false);
 
   @override
   void initState() {
@@ -78,6 +79,52 @@ class _SettingPageState extends State<SettingPage>
                                   LanBroadcastService.getInstance()
                                       .stopBroadcast();
                                 }
+                              }),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: SpaceWidget.createHeightSpace(1,
+                          spaceColor: AppColors.lineColor),
+                    )
+                  ],
+                ),
+              );
+            }),
+        ValueListenableBuilder(
+            valueListenable: _httpDBControl,
+            builder: (context, controlValue, child) {
+              return SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: Stack(
+                  children: [
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                        child: Text(
+                          "http协议数据库操作",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: AppColors.mainColor),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 0, 20, 0),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Switch(
+                              value: controlValue,
+                              onChanged: (newValue) {
+                                _httpDBControl.value = newValue;
+                                if (newValue) {
+                                } else {}
                               }),
                         ),
                       ),

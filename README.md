@@ -13,3 +13,11 @@ android | ios | windows
 3.局域网下sqlite互操作(开发中...)
 
 4.提供http协议下sqlite API(开发中...)
+
+示例如下：
+
+![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/browser.png)
+
+![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/database.png)
+
+![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/setting.png)
