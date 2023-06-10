@@ -42,11 +42,6 @@ class DBWorkspaceManager {
     return _lastConnectDBFile;
   }
 
-  Future<String?> getWifiIP() async {
-    NetworkInfo networkInfo = NetworkInfo();
-    return networkInfo.getWifiIP();
-  }
-
   Future<List<DBFileInfo>> listWorkspaceDBFile([DBDirConst? dirConst]) async {
     String dbDirPath = await StorageHelper.getDatabaseDirPath(dirConst);
     Directory dbDir = Directory(dbDirPath);

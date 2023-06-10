@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/common/log/Log.dart';
-import 'package:web_sqlite_test/router/WebSQLRouter.dart';
+import 'package:web_sqlite_test/router/RouterManager.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 // Import for Windows features.
@@ -42,7 +42,7 @@ class _WebViewWrapperState extends State<WebViewWrapper>
             onMessageReceived: (JavaScriptMessage javaScriptMessage) async {
           Log.message(
               "_phoneWebController javascript ${javaScriptMessage.message}");
-          WebSQLRouter.route(javaScriptMessage.message,
+          RouterManager.route(javaScriptMessage.message,
               callback: (routerResult, [routerId]) {
             routerId ??= "0";
             routerResult = base64Encode(Uint8List.fromList(routerResult.codeUnits));

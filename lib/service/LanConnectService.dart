@@ -21,11 +21,12 @@ class LanConnectService {
 
   final Set<OnLanBroadcastCallback> _callbackList = {};
   RawSocket? _connectSocket;
+  bool _isListenConnect = false;
 
   Future<LanConnectService> connectService(HostInfo hostInfo) async {
     Log.message("connectService hostInfo : $hostInfo");
     _connectSocket =
-        await RawSocket.connect(hostInfo.host, int.parse(hostInfo.post))
+        await RawSocket.connect(hostInfo.host, int.parse(hostInfo.port))
             .catchError((error) {
       Log.message("connectService RawSocket.connect error: $error");
     });
@@ -37,6 +38,10 @@ class LanConnectService {
     if (callback != null) {
       _callbackList.add(callback);
     }
+    if (_isListenConnect) {
+      return;
+    }
+    _isListenConnect = true;
     _connectSocket?.listen((socketEvent) {
       Log.message("listenBroadcast socketEvent:  $socketEvent");
       if (socketEvent == RawSocketEvent.read) {
@@ -63,8 +68,13 @@ class LanConnectService {
     return _connectSocket != null;
   }
 
+  void removeConnectCallback(OnLanConnectCallback? callback){
+    _callbackList.remove(callback);
+  }
+
   void unConnectService() {
     _callbackList.clear();
+    _isListenConnect = false;
     _connectSocket?.close();
     _connectSocket = null;
     Log.message("LanConnectService unConnectService over");

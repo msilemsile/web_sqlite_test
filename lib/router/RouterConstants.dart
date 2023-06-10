@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter_app/common/log/Log.dart';
+import 'package:web_sqlite_test/router/RouterManager.dart';
+
 import '../service/LanConnectService.dart';
-import 'WebSQLRouter.dart';
 
 abstract class RouterConstants {
   ///base
@@ -17,40 +19,47 @@ abstract class RouterConstants {
   static const String actionConnect = "connect";
   static const String actionUnConnect = "unConnect";
   static const String actionBroadcast = "broadcast";
+  static const String actionExecSQLResult = "execSQLResult";
+
+  ///param data
+  static const String dataHost = "host";
+  static const String dataPort = "port";
+  static const String dataPlatform = "platform";
+  static const String dataResult = "result";
 
   static String buildSocketBroadcastRoute(String wifiIP) {
     String webSQLRoute =
-    WebSQLRouter.buildWebSQLRoute(RouterConstants.actionBroadcast, {
-      "wifiIP": wifiIP,
-      "port": LanConnectService.connectListenPort.toString(),
-      "platform": Platform.operatingSystem
+        RouterManager.buildWebSQLRoute(RouterConstants.actionBroadcast, {
+      dataHost: wifiIP,
+      dataPort: LanConnectService.connectListenPort.toString(),
+      dataPlatform: Platform.operatingSystem
     });
+    Log.message("RouterConstants buildSocketBroadcastRoute: $webSQLRoute");
     return webSQLRoute;
   }
 
   static String buildSocketConnectRoute(String wifiIP) {
     String webSQLRoute =
-        WebSQLRouter.buildWebSQLRoute(RouterConstants.actionConnect, {
-      "wifiIP": wifiIP,
-      "port": LanConnectService.connectListenPort.toString(),
-      "platform": Platform.operatingSystem
+        RouterManager.buildWebSQLRoute(RouterConstants.actionConnect, {
+      dataHost: wifiIP,
+      dataPort: LanConnectService.connectListenPort.toString(),
+      dataPlatform: Platform.operatingSystem
     });
-    return webSQLRoute;
-  }
-
-  static String buildSocketUnConnectRoute(String wifiIP) {
-    String webSQLRoute =
-    WebSQLRouter.buildWebSQLRoute(RouterConstants.actionUnConnect, {
-      "wifiIP": wifiIP,
-      "port": LanConnectService.connectListenPort.toString(),
-      "platform": Platform.operatingSystem
-    });
+    Log.message("RouterConstants buildSocketConnectRoute: $webSQLRoute");
     return webSQLRoute;
   }
 
   static String buildListDBRoute() {
     String webSQLRoute =
-        WebSQLRouter.buildWebSQLRoute(RouterConstants.actionListDB);
+        RouterManager.buildWebSQLRoute(RouterConstants.actionListDB);
+    Log.message("RouterConstants buildListDBRoute: $webSQLRoute");
+    return webSQLRoute;
+  }
+
+  static String buildExecSQLResultRoute(String result) {
+    var webSQLRoute = RouterManager.buildWebSQLRoute(
+      RouterConstants.actionExecSQLResult, {dataResult: result});
+    Log.message("RouterConstants buildExecSQLResultRoute: $webSQLRoute");
     return webSQLRoute;
   }
 }

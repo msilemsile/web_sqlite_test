@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/flutter_app.dart';
+import 'package:web_sqlite_test/dialog/DBLanConnectDialog.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
@@ -75,6 +76,7 @@ class _SettingPageState extends State<SettingPage>
                                           "listenBroadcast result = $result");
                                     });
                                   });
+                                  DBLanConnectDialog().show(context);
                                 } else {
                                   LanBroadcastService.getInstance()
                                       .stopBroadcast();

@@ -2,74 +2,56 @@ import 'dart:convert';
 
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:web_sqlite_test/database/DBManager.dart';
+import 'package:web_sqlite_test/model/WebSQLRouter.dart';
 
 import 'RouterConstants.dart';
 
 ///websql://host?action=xxx&data={jsonData}
-class WebSQLRouter {
-  static void route(String webSqlRoute, {RouterCallback? callback}) {
-    if (webSqlRoute.isEmpty) {
+class RouterManager {
+  static void route(String routerString, {RouterCallback? callback}) {
+    if (routerString.isEmpty) {
       Log.message("WebSQLRouter route is null");
       callback?.call("router is null");
       return;
     }
-    if (!webSqlRoute.startsWith(RouterConstants.constScheme)) {
-      Log.message("WebSQLRouter route scheme error");
-      callback?.call("route scheme error");
+    WebSQLRouter? webSQLRouter = parseToWebSQLRouter(routerString);
+    if (webSQLRouter == null) {
+      callback?.call("WebSQLRouter parseToWebSQLRouter error");
       return;
     }
-    Uri webSQLUri;
-    try {
-      webSQLUri = Uri.parse(webSqlRoute);
-    } catch (error) {
-      Log.message("WebSQLRouter route parse url error$error");
-      callback?.call("route parse url error");
-      return;
-    }
-    Map<String, String> parameters = webSQLUri.queryParameters;
-    String? paramAction = parameters[RouterConstants.constParamAction];
-    String? paramData = parameters[RouterConstants.constParamData];
-    String? paramRouterId = parameters[RouterConstants.constParamRouterId];
-    Log.message(
-        "WebSQLRouter route parse url \n paramsAction: $paramAction \n paramsData: $paramData \n paramRouterId: $paramRouterId");
-    _handleRouteAction(paramAction, paramData, paramRouterId, callback);
+    Log.message("WebSQLRouter route parse url $webSQLRouter");
+    _handleRouteAction(webSQLRouter, callback);
   }
 
-  static void _handleRouteAction(String? paramAction, String? paramData,
-      String? paramRouterId, RouterCallback? callback) {
+  static void _handleRouteAction(
+      WebSQLRouter webSQLRouter, RouterCallback? callback) {
+    String? paramAction = webSQLRouter.action;
+    String? paramRouterId = webSQLRouter.routerId;
+    Map<String, dynamic>? paramDataResult = webSQLRouter.jsonData;
     if (paramAction == null || paramAction.isEmpty) {
       Log.message("WebSQLRouter route paramAction is null");
       callback?.call("paramAction is null", paramRouterId);
       return;
     }
-    checkParamDataNull() {
-      if (paramData == null || paramData.isEmpty) {
-        callback?.call("paramData is null", paramRouterId);
-        return true;
-      }
-      return false;
-    }
 
-    Map<String, dynamic>? paramDataResult;
     switch (paramAction) {
       case RouterConstants.actionExecSQL:
-        if (checkParamDataNull()) {
+        if (paramDataResult == null) {
           return;
         }
-        paramDataResult = jsonDecode(paramData!);
-        String? databaseName = paramDataResult?["databaseName"];
+        String? databaseName = paramDataResult["databaseName"];
         if (databaseName == null) {
           callback?.call("databaseName is null", paramRouterId);
           return;
         }
-        String? sql = paramDataResult?['sql'];
+        String? sql = paramDataResult['sql'];
         if (sql == null) {
           callback?.call("exec sql is null", paramRouterId);
           return;
         }
         List<dynamic>? sqlParams;
         try {
-          sqlParams = paramDataResult?['sqlParams'] as List?;
+          sqlParams = paramDataResult['sqlParams'] as List?;
         } catch (error) {
           Log.message("WebSQLRouter route sqlParams parse error");
         }
@@ -93,6 +75,28 @@ class WebSQLRouter {
           RouterConstants.constParamData: Uri.encodeComponent(jsonData)
         });
     return uri.toString();
+  }
+
+  static WebSQLRouter? parseToWebSQLRouter(String routerString) {
+    if (!routerString.startsWith(RouterConstants.constScheme)) {
+      return null;
+    }
+    Uri webSQLUri;
+    try {
+      webSQLUri = Uri.parse(routerString);
+    } catch (error) {
+      Log.message("WebSQLRouter route parse url error$error");
+      return null;
+    }
+    Map<String, String> parameters = webSQLUri.queryParameters;
+    String? paramAction = parameters[RouterConstants.constParamAction];
+    String? paramData = parameters[RouterConstants.constParamData];
+    Map<String, dynamic> jsonData = {};
+    if (paramData != null) {
+      jsonData = jsonDecode(Uri.decodeComponent(paramData));
+    }
+    String? paramRouterId = parameters[RouterConstants.constParamRouterId];
+    return WebSQLRouter(paramAction, jsonData, paramRouterId);
   }
 }
 
