@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_app/common/log/Log.dart';
-import 'package:web_sqlite_test/database/DBManager.dart';
+import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/model/WebSQLRouter.dart';
 
 import 'RouterConstants.dart';
@@ -55,7 +55,7 @@ class RouterManager {
         } catch (error) {
           Log.message("WebSQLRouter route sqlParams parse error");
         }
-        DBManager.getInstance()
+        DBWorkspaceManager.getInstance()
             .getDBCommandHelper(databaseName)
             .execSql(sql, sqlParams, (result) {
           callback?.call(result, paramRouterId);

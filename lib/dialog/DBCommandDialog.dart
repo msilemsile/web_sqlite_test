@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/database/DBCommandHelper.dart';
-import 'package:web_sqlite_test/database/DBManager.dart';
+import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
 class DBCommandDialog extends StatefulWidget {
@@ -35,7 +35,7 @@ class _DBCommandDialogState extends State<DBCommandDialog> {
   void initState() {
     super.initState();
     _dbCommandHelper =
-        DBManager.getInstance().getDBCommandHelper(widget.databaseName);
+        DBWorkspaceManager.getInstance().getDBCommandHelper(widget.databaseName);
   }
 
   @override

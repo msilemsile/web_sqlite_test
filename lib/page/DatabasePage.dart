@@ -4,13 +4,12 @@ import 'package:flutter_app/flutter_app.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:sqlite3/sqlite3.dart' as sql3;
 import 'package:web_sqlite_test/database/DBConstants.dart';
-import 'package:web_sqlite_test/database/DBManager.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
+import 'package:web_sqlite_test/dialog/DBCommandDialog.dart';
 import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/EmptyDataList.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
-import 'package:web_sqlite_test/dialog/DBCommandDialog.dart';
 
 import '../database/DBDirConst.dart';
 
@@ -152,8 +151,8 @@ class _DatabasePageState extends State<DatabasePage>
                               .setTitle("确定删除${dbFileInfo.dbFileName}数据库吗?")
                               .setCancelTxt("取消")
                               .setConfirmCallback((_) async {
-                            await DBManager.getInstance()
-                                .deleteDatabase(dbFileInfo.dbFileName);
+                            await DBWorkspaceManager.getInstance()
+                                .deleteWorkspaceDB(dbFileInfo.dbFileName);
                             setState(() {});
                           }).show(context);
                         },
@@ -282,15 +281,7 @@ class _DatabasePageState extends State<DatabasePage>
   }
 
   @override
-  onTabLongTap() async {
-    AppAlertDialog.builder()
-        .setTitle("确定删除所有数据库吗?")
-        .setCancelTxt("取消")
-        .setConfirmCallback((alertDialog) async {
-      await DBManager.getInstance().deleteAllDatabase();
-      setState(() {});
-    }).show(context);
-  }
+  onTabLongTap() async {}
 
   @override
   onTabTap(bool isChangedTab) {
@@ -388,11 +379,13 @@ class _DatabasePageState extends State<DatabasePage>
       AppDialog appDialog = AppDialog();
       appDialog.show(context, buildWorkspaceDialog());
     } else if (moreAction == exeSqlAction) {
-      DBFileInfo? lastConnectDBFile = DBWorkspaceManager.getInstance().getLastConnectDBFile();
+      DBFileInfo? lastConnectDBFile =
+          DBWorkspaceManager.getInstance().getLastConnectDBFile();
       if (lastConnectDBFile == null) {
         AppToast.show("暂无数据");
       } else {
-        DBCommandDialog(databaseName: lastConnectDBFile.dbFileName).show(context);
+        DBCommandDialog(databaseName: lastConnectDBFile.dbFileName)
+            .show(context);
       }
     } else if (moreAction == refreshDatabaseAction) {
       pullToRefreshState.currentState?.show();
@@ -409,7 +402,7 @@ class _DatabasePageState extends State<DatabasePage>
           AppToast.show("数据库名称不能为空");
         } else {
           sql3.Database? database =
-              await DBManager.getInstance().openDatabase(dbName);
+              await DBWorkspaceManager.getInstance().openOrCreateWorkspaceDB(dbName);
           database?.dispose();
           setState(() {});
         }
