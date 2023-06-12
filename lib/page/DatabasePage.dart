@@ -6,6 +6,7 @@ import 'package:sqlite3/sqlite3.dart' as sql3;
 import 'package:web_sqlite_test/database/DBConstants.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/dialog/DBCommandDialog.dart';
+import 'package:web_sqlite_test/dialog/DBWorkspaceDialog.dart';
 import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/EmptyDataList.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
@@ -321,6 +322,7 @@ class _DatabasePageState extends State<DatabasePage>
 
   Widget buildPopItemWidget(int moreAction) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         invokeMoreAction(moreAction);
       },
@@ -376,8 +378,7 @@ class _DatabasePageState extends State<DatabasePage>
   void invokeMoreAction(int moreAction) async {
     _moreActionWindow.hide(context);
     if (moreAction == exchangeWorkspaceAction) {
-      AppDialog appDialog = AppDialog();
-      appDialog.show(context, buildWorkspaceDialog());
+      DBWorkspaceDialog().show(context);
     } else if (moreAction == exeSqlAction) {
       DBFileInfo? lastConnectDBFile =
           DBWorkspaceManager.getInstance().getLastConnectDBFile();
@@ -439,66 +440,4 @@ class _DatabasePageState extends State<DatabasePage>
     return editDBNameWidget;
   }
 
-  Widget buildWorkspaceItemWidget(DBDirConst dbDirConst) {
-    return GestureDetector(
-      onTap: () {
-        changeWorkspace(dbDirConst);
-      },
-      child: SizedBox(
-        width: double.infinity,
-        height: 45,
-        child: Stack(
-          children: [
-            Visibility(
-                visible: _currentWorkspace.value == dbDirConst,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
-                    child: Image.asset(
-                      "images/icon_focus.png",
-                      colorBlendMode: BlendMode.srcATop,
-                      color: Colors.red,
-                      width: 20,
-                      height: 20,
-                    ),
-                  ),
-                )),
-            Center(
-              child: Text(
-                DBConstants.getDBDirTitle(dbDirConst),
-                style: const TextStyle(color: Color(0xff1E90FF)),
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildWorkspaceDialog() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-      child: RectangleShape(
-        solidColor: Colors.white,
-        stokeColor: const Color(0xff1E90FF),
-        cornerAll: 10,
-        stokeWidth: 1,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            buildWorkspaceItemWidget(DBDirConst.local),
-            SpaceWidget.createHeightSpace(1,
-                spaceColor: const Color(0xff1E90FF)),
-            buildWorkspaceItemWidget(DBDirConst.lan),
-            SpaceWidget.createHeightSpace(1,
-                spaceColor: const Color(0xff1E90FF)),
-            buildWorkspaceItemWidget(DBDirConst.server)
-          ],
-        ),
-      ),
-    );
-  }
-
-  void changeWorkspace(DBDirConst dbDirConst) {}
 }

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_app/flutter_app.dart';
-import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/router/RouterConstants.dart';
 import 'package:web_sqlite_test/utils/HostHelper.dart';
 
@@ -78,10 +77,9 @@ class LanBroadcastService {
     _broadcastSocket?.send(msgInts, InternetAddress(wifiIP), port);
   }
 
-  void listenBroadcast(OnLanBroadcastCallback? callback) {
+  void listenBroadcast(OnLanBroadcastCallback? callback) async {
     if (_broadcastSocket == null) {
-      AppToast.show("请在设置页打开局域网互操作", AppToast.lengthLong);
-      return;
+      await startBroadcast();
     }
     if (callback != null) {
       _callbackList.add(callback);
@@ -105,7 +103,7 @@ class LanBroadcastService {
     });
   }
 
-  void removeBroadcastCallback(OnLanBroadcastCallback? callback){
+  void removeBroadcastCallback(OnLanBroadcastCallback? callback) {
     _callbackList.remove(callback);
   }
 
