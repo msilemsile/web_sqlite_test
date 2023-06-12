@@ -33,9 +33,9 @@ class LanBroadcastService {
       return this;
     }
     Log.message("startBroadcast local wifiIP : $wifiIP");
-    _broadcastSocket ??= await RawDatagramSocket.bind(
-            InternetAddress.anyIPv4, broadcastListenPort)
-        .catchError((error) {
+    _broadcastSocket ??=
+        await RawDatagramSocket.bind(wifiIP, broadcastListenPort)
+            .catchError((error) {
       Log.message("startBroadcast RawDatagramSocket.bind error: $error");
     });
     _periodicBroadcast(wifiIP);
@@ -62,7 +62,7 @@ class LanBroadcastService {
         if (i.toString().compareTo(splitIP[3]) != 0) {
           Uint8List uint8list = Uint8List.fromList(
               RouterConstants.buildSocketBroadcastRoute(localWifiIP).codeUnits);
-          _broadcastSocket?.send(uint8list,
+          _broadcastSocket!.send(uint8list,
               InternetAddress("$needBroadcastIP$i"), broadcastListenPort);
         }
       }

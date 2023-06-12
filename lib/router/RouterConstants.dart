@@ -34,7 +34,6 @@ abstract class RouterConstants {
       dataPort: LanConnectService.connectListenPort.toString(),
       dataPlatform: Platform.operatingSystem
     });
-    Log.message("RouterConstants buildSocketBroadcastRoute: $webSQLRoute");
     return webSQLRoute;
   }
 
@@ -45,21 +44,18 @@ abstract class RouterConstants {
       dataPort: LanConnectService.connectListenPort.toString(),
       dataPlatform: Platform.operatingSystem
     });
-    Log.message("RouterConstants buildSocketConnectRoute: $webSQLRoute");
     return webSQLRoute;
   }
 
   static String buildListDBRoute() {
     String webSQLRoute =
         RouterManager.buildWebSQLRoute(RouterConstants.actionListDB);
-    Log.message("RouterConstants buildListDBRoute: $webSQLRoute");
     return webSQLRoute;
   }
 
   static String buildExecSQLResultRoute(String result) {
     var webSQLRoute = RouterManager.buildWebSQLRoute(
       RouterConstants.actionExecSQLResult, {dataResult: result});
-    Log.message("RouterConstants buildExecSQLResultRoute: $webSQLRoute");
     return webSQLRoute;
   }
 }

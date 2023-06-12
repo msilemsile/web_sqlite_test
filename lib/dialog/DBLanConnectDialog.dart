@@ -130,7 +130,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
               height: 1,
             );
           },
-          padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+          padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
           itemBuilder: (buildContext, index) {
             if (index == _hostInfoList.length) {
               return const SizedBox(
