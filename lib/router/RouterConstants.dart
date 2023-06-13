@@ -16,7 +16,8 @@ abstract class RouterConstants {
   ///param action
   static const String actionExecSQL = "execSQL";
   static const String actionListDB = "listDB";
-  static const String actionConnect = "connect";
+  static const String actionPrepareConnect = "prepareConnect";
+  static const String actionConnectSuccess = "connectSuccess";
   static const String actionUnConnect = "unConnect";
   static const String actionBroadcast = "broadcast";
   static const String actionExecSQLResult = "execSQLResult";
@@ -37,9 +38,19 @@ abstract class RouterConstants {
     return webSQLRoute;
   }
 
-  static String buildSocketConnectRoute(String wifiIP) {
+  static String buildSocketPrepareConnectRoute(String wifiIP) {
     String webSQLRoute =
-        RouterManager.buildWebSQLRoute(RouterConstants.actionConnect, {
+        RouterManager.buildWebSQLRoute(RouterConstants.actionPrepareConnect, {
+      dataHost: wifiIP,
+      dataPort: LanConnectService.connectListenPort.toString(),
+      dataPlatform: Platform.operatingSystem
+    });
+    return webSQLRoute;
+  }
+
+  static String buildSocketConnectSuccessRoute(String wifiIP) {
+    String webSQLRoute =
+    RouterManager.buildWebSQLRoute(RouterConstants.actionConnectSuccess, {
       dataHost: wifiIP,
       dataPort: LanConnectService.connectListenPort.toString(),
       dataPlatform: Platform.operatingSystem

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/dialog/DBLanConnectDialog.dart';
+import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
 import '../database/DBConstants.dart';
@@ -103,7 +104,9 @@ class _DBWorkspaceDialogState extends State<DBWorkspaceDialog> {
             setState(() {});
           }).show(context);
         } else if (dbDirConst == DBDirConst.lan) {
-          DBLanConnectDialog().show(context);
+          DBLanConnectDialog(onSelectHostCallback: (selectHostInfo){
+            AppToast.show()
+          },).show(context);
         } else if (dbDirConst == DBDirConst.server) {
           AppToast.show("该功能开发中");
         }

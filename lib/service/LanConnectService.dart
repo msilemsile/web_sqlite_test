@@ -24,13 +24,15 @@ class LanConnectService {
   bool _isListenConnect = false;
 
   Future<LanConnectService> connectService(HostInfo hostInfo) async {
-    Log.message("connectService hostInfo : $hostInfo");
+    if (isConnectedService()) {
+      unConnectService();
+    }
+    Log.message("LanConnectService connectService hostInfo : $hostInfo");
     _connectSocket =
         await RawSocket.connect(hostInfo.host, int.parse(hostInfo.port))
             .catchError((error) {
-      Log.message("connectService RawSocket.connect error: $error");
+      Log.message("LanConnectService connectService RawSocket.connect error: $error");
     });
-    listenConnect(null);
     return this;
   }
 
@@ -43,13 +45,13 @@ class LanConnectService {
     }
     _isListenConnect = true;
     _connectSocket?.listen((socketEvent) {
-      Log.message("listenBroadcast socketEvent:  $socketEvent");
+      Log.message("LanConnectService listenBroadcast socketEvent:  $socketEvent");
       if (socketEvent == RawSocketEvent.read) {
         Uint8List? uint8list =
             _connectSocket?.read(_connectSocket?.available());
         if (uint8list != null) {
           String dataReceive = String.fromCharCodes(uint8list);
-          Log.message("listenBroadcast dataReceive:  $dataReceive");
+          Log.message("LanConnectService listenBroadcast dataReceive:  $dataReceive");
           for (OnLanBroadcastCallback callback in _callbackList) {
             callback(dataReceive);
           }
@@ -59,7 +61,7 @@ class LanConnectService {
   }
 
   void sendMessage(String message) {
-    Log.message("LanConnectService sendMessage: $message");
+    Log.message("LanConnectService LanConnectService sendMessage: $message");
     var msgInts = Uint8List.fromList(message.codeUnits);
     _connectSocket?.write(msgInts, 0, msgInts.length);
   }
@@ -68,7 +70,7 @@ class LanConnectService {
     return _connectSocket != null;
   }
 
-  void removeConnectCallback(OnLanConnectCallback? callback){
+  void removeConnectCallback(OnLanConnectCallback? callback) {
     _callbackList.remove(callback);
   }
 

@@ -32,11 +32,11 @@ class LanBroadcastService {
       AppToast.show("获取局域网ip失败,请检查网络连接");
       return this;
     }
-    Log.message("startBroadcast local wifiIP : $wifiIP");
+    Log.message("LanBroadcastService startBroadcast local wifiIP : $wifiIP");
     _broadcastSocket ??=
         await RawDatagramSocket.bind(wifiIP, broadcastListenPort)
             .catchError((error) {
-      Log.message("startBroadcast RawDatagramSocket.bind error: $error");
+      Log.message("LanBroadcastService startBroadcast RawDatagramSocket.bind error: $error");
     });
     _periodicBroadcast(wifiIP);
     return this;
@@ -55,9 +55,8 @@ class LanBroadcastService {
     }
     String needBroadcastIP = "${splitIP[0]}.${splitIP[1]}.${splitIP[2]}.";
     _isPeriodicBroadcast = true;
-    Log.message("_sendBroadcast needBroadcastIP: $needBroadcastIP");
+    Log.message("LanBroadcastService _sendBroadcast needBroadcastIP: $needBroadcastIP");
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      Log.message("_sendBroadcast start");
       for (int i = 1; i < 255; i++) {
         if (i.toString().compareTo(splitIP[3]) != 0) {
           Uint8List uint8list = Uint8List.fromList(
@@ -66,13 +65,11 @@ class LanBroadcastService {
               InternetAddress("$needBroadcastIP$i"), broadcastListenPort);
         }
       }
-      Log.message(
-          "_sendBroadcast success end ip range: [$needBroadcastIP.1 - $needBroadcastIP.254]");
     });
   }
 
   void sendBroadcast(String wifiIP, int port, String message) {
-    Log.message("LanBroadcastService sendMessage");
+    Log.message("LanBroadcastService sendMessage : $message");
     var msgInts = Uint8List.fromList(message.codeUnits);
     _broadcastSocket?.send(msgInts, InternetAddress(wifiIP), port);
   }
@@ -89,12 +86,12 @@ class LanBroadcastService {
     }
     _isListenBroadcast = true;
     _broadcastSocket?.listen((RawSocketEvent socketEvent) {
-      Log.message("listenBroadcast socketEvent:  $socketEvent");
+      Log.message("LanBroadcastService listenBroadcast socketEvent:  $socketEvent");
       if (socketEvent == RawSocketEvent.read) {
         Datagram? datagram = _broadcastSocket?.receive();
         if (datagram != null) {
           String receiveData = String.fromCharCodes(datagram.data);
-          Log.message("listenBroadcast receiveData:  $receiveData");
+          Log.message("LanBroadcastService listenBroadcast receiveData:  $receiveData");
           for (OnLanBroadcastCallback callback in _callbackList) {
             callback(receiveData);
           }
@@ -115,6 +112,6 @@ class LanBroadcastService {
     _isListenBroadcast = false;
     _broadcastSocket?.close();
     _broadcastSocket = null;
-    Log.message("stopBroadcast over");
+    Log.message("LanBroadcastService stopBroadcast over");
   }
 }
