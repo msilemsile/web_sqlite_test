@@ -9,6 +9,7 @@ import 'package:web_sqlite_test/utils/HostHelper.dart';
 typedef OnLanBroadcastCallback = Function(String result);
 
 class LanBroadcastService {
+  static String multicastAddress = "239.123.123.123";
   static const int broadcastListenPort = 9090;
 
   LanBroadcastService._();
@@ -22,8 +23,8 @@ class LanBroadcastService {
   }
 
   RawDatagramSocket? _broadcastSocket;
-  Timer? _timer;
-  bool _isPeriodicBroadcast = false;
+  RawDatagramSocket? _sendSocket;
+  bool _stopPeriodicBroadcast = false;
   bool _isListenBroadcast = false;
 
   Future<LanBroadcastService> startBroadcast() async {
@@ -34,44 +35,36 @@ class LanBroadcastService {
     }
     Log.message("LanBroadcastService startBroadcast local wifiIP : $wifiIP");
     _broadcastSocket ??=
-        await RawDatagramSocket.bind(wifiIP, broadcastListenPort)
+        await RawDatagramSocket.bind(InternetAddress.anyIPv4, broadcastListenPort)
             .catchError((error) {
-      Log.message("LanBroadcastService startBroadcast RawDatagramSocket.bind error: $error");
+      Log.message(
+          "LanBroadcastService startBroadcast RawDatagramSocket.bind error: $error");
     });
+    _broadcastSocket?.joinMulticast(InternetAddress(multicastAddress));
+    _stopPeriodicBroadcast = false;
     _periodicBroadcast(wifiIP);
     return this;
   }
 
-  void _periodicBroadcast(String localWifiIP) {
-    if (_isPeriodicBroadcast) {
+  void _periodicBroadcast(String localWifiIP) async {
+    if (_stopPeriodicBroadcast) {
+      Log.message("LanBroadcastService _stopPeriodicBroadcast");
       return;
     }
-    List<String> splitIP = localWifiIP.split(".");
-    if (splitIP.isEmpty || splitIP.length != 4) {
-      return;
-    }
-    if (splitIP[0].compareTo("0") == 0) {
-      return;
-    }
-    String needBroadcastIP = "${splitIP[0]}.${splitIP[1]}.${splitIP[2]}.";
-    _isPeriodicBroadcast = true;
-    Log.message("LanBroadcastService _sendBroadcast needBroadcastIP: $needBroadcastIP");
-    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      for (int i = 1; i < 255; i++) {
-        if (i.toString().compareTo(splitIP[3]) != 0) {
-          Uint8List uint8list = Uint8List.fromList(
-              RouterConstants.buildSocketBroadcastRoute(localWifiIP).codeUnits);
-          _broadcastSocket!.send(uint8list,
-              InternetAddress("$needBroadcastIP$i"), broadcastListenPort);
-        }
-      }
+    Log.message("LanBroadcastService _periodicBroadcast start");
+    await sendBroadcast(multicastAddress, broadcastListenPort, RouterConstants.buildSocketBroadcastRoute(localWifiIP));
+    Log.message("LanBroadcastService _periodicBroadcast end");
+    Timer(const Duration(seconds: 2), () {
+      _periodicBroadcast(localWifiIP);
     });
+    Log.message("LanBroadcastService _periodicBroadcast delay 2s");
   }
 
-  void sendBroadcast(String wifiIP, int port, String message) {
+  Future<void> sendBroadcast(String wifiIP, int port, String message) async {
     Log.message("LanBroadcastService sendMessage : $message");
     var msgInts = Uint8List.fromList(message.codeUnits);
-    _broadcastSocket?.send(msgInts, InternetAddress(wifiIP), port);
+    _sendSocket ??= await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+    _sendSocket?.send(msgInts, InternetAddress(wifiIP), port);
   }
 
   void listenBroadcast(OnLanBroadcastCallback? callback) async {
@@ -86,12 +79,14 @@ class LanBroadcastService {
     }
     _isListenBroadcast = true;
     _broadcastSocket?.listen((RawSocketEvent socketEvent) {
-      Log.message("LanBroadcastService listenBroadcast socketEvent:  $socketEvent");
+      Log.message(
+          "LanBroadcastService listenBroadcast socketEvent:  $socketEvent");
       if (socketEvent == RawSocketEvent.read) {
         Datagram? datagram = _broadcastSocket?.receive();
         if (datagram != null) {
           String receiveData = String.fromCharCodes(datagram.data);
-          Log.message("LanBroadcastService listenBroadcast receiveData:  $receiveData");
+          Log.message(
+              "LanBroadcastService listenBroadcast receiveData:  $receiveData");
           for (OnLanBroadcastCallback callback in _callbackList) {
             callback(receiveData);
           }
@@ -106,12 +101,12 @@ class LanBroadcastService {
 
   void stopBroadcast() {
     _callbackList.clear();
-    _isPeriodicBroadcast = false;
-    _timer?.cancel();
-    _timer = null;
+    _stopPeriodicBroadcast = true;
     _isListenBroadcast = false;
     _broadcastSocket?.close();
     _broadcastSocket = null;
+    _sendSocket?.close();
+    _sendSocket = null;
     Log.message("LanBroadcastService stopBroadcast over");
   }
 }

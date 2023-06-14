@@ -6,6 +6,8 @@ import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
+import '../model/HostInfo.dart';
+
 class SettingPage extends StatefulWidget {
   final OnTabPageCreateListener onTabPageCreateListener;
 
@@ -76,7 +78,9 @@ class _SettingPageState extends State<SettingPage>
                                           "listenBroadcast result = $result");
                                     });
                                   });
-                                  DBLanConnectDialog().show(context);
+                                  DBLanConnectDialog(onSelectHostCallback: (HostInfo hostInfo) {
+
+                                  },).show(context);
                                 } else {
                                   LanBroadcastService.getInstance()
                                       .stopBroadcast();

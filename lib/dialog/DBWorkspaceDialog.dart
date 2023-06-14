@@ -105,7 +105,7 @@ class _DBWorkspaceDialogState extends State<DBWorkspaceDialog> {
           }).show(context);
         } else if (dbDirConst == DBDirConst.lan) {
           DBLanConnectDialog(onSelectHostCallback: (selectHostInfo){
-            AppToast.show()
+
           },).show(context);
         } else if (dbDirConst == DBDirConst.server) {
           AppToast.show("该功能开发中");
