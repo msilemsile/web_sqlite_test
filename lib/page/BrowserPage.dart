@@ -52,31 +52,22 @@ class _BrowserPageState extends State<BrowserPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return WillPopScope(
-        child: Column(
-          children: [
-            buildTopBrowserWidget(),
-            Expanded(child: WebViewWrapper(
-              wrapperListener: (WebViewWrapperController controller) {
-                webViewWrapperController = controller;
-                urlEditingController.text = widget.initUrl;
-                loadWebUrl();
-              },
-            )),
-            // SlideTransition(
-            //   position: _urlInputAnimController.drive(_urlInputAnimTween),
-            //   child: buildTopBrowserWidget(),
-            // ),
-          ],
-        ),
-        onWillPop: () async {
-          bool? canGoBack = await webViewWrapperController?.canGoBack();
-          if (canGoBack != null && canGoBack) {
-            webViewWrapperController?.goBack();
-            return Future.value(false);
-          }
-          return Future.value(true);
-        });
+    return Column(
+      children: [
+        buildTopBrowserWidget(),
+        Expanded(child: WebViewWrapper(
+          wrapperListener: (WebViewWrapperController controller) {
+            webViewWrapperController = controller;
+            urlEditingController.text = widget.initUrl;
+            loadWebUrl();
+          },
+        )),
+        // SlideTransition(
+        //   position: _urlInputAnimController.drive(_urlInputAnimTween),
+        //   child: buildTopBrowserWidget(),
+        // ),
+      ],
+    );
   }
 
   Widget buildTopBrowserWidget() {
@@ -247,5 +238,15 @@ class _BrowserPageState extends State<BrowserPage>
     if (canGoBack != null && canGoBack) {
       webViewWrapperController?.goBack();
     }
+  }
+
+  @override
+  Future<bool> canGoBack() async {
+    bool? canGoBack = await webViewWrapperController?.canGoBack();
+    if (canGoBack != null && canGoBack) {
+      webViewWrapperController?.goBack();
+      return false;
+    }
+    return true;
   }
 }

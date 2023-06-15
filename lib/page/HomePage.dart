@@ -5,6 +5,9 @@ import 'package:web_sqlite_test/page/DatabasePage.dart';
 import 'package:web_sqlite_test/page/SettingPage.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
+import '../service/LanBroadcastService.dart';
+import '../service/LanConnectService.dart';
+
 class HomePage extends StatefulWidget {
   static const int tabBrowser = 0;
   static const int tabDatabase = 1;
@@ -30,87 +33,107 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return BasePage(
-      child: DragWidget(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                  child: PageView(
-                physics: const NeverScrollableScrollPhysics(),
-                controller: _pageController,
-                children: [
-                  BrowserPage(
-                    initUrl: "home",
-                    onTabPageCreateListener: (controller) {
-                      _browserTabController = controller;
-                    },
-                  ),
-                  DatabasePage(
-                    onTabPageCreateListener: (controller) {
-                      _databaseTabController = controller;
-                    },
-                  ),
-                  SettingPage(onTabPageCreateListener: (controller) {
-                    _settingTabController = controller;
-                  })
-                ],
-              )),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ValueListenableBuilder(
-                    valueListenable: _currentTab,
-                    builder: (_, currentTabValue, child) {
-                      return Column(
-                        children: [
-                          SpaceWidget.createHeightSpace(1,
-                              spaceColor: Colors.grey),
-                          Expanded(
-                              child: Row(
-                            children: [
-                              Expanded(
-                                  child: buildTabItemWidget(
-                                      HomePage.tabBrowser, currentTabValue)),
-                              Expanded(
-                                  child: buildTabItemWidget(
-                                      HomePage.tabDatabase, currentTabValue)),
-                              Expanded(
-                                  child: buildTabItemWidget(
-                                      HomePage.tabSetting, currentTabValue)),
-                            ],
-                          ))
-                        ],
-                      );
-                    }),
-              )
-            ],
-          ),
-          DragChild(
-              right: 10,
-              bottom: 60,
-              onClickListener: () {
-                ///todo sql命令行窗体
-              },
-              child: ValueListenableBuilder(
-                valueListenable: _terminalShow,
-                builder: (buildContext, isShow, child) {
-                  return Visibility(
-                    visible: isShow,
-                    child: CircleShape(
-                      solidColor: Colors.white,
-                      stokeWidth: 1,
-                      stokeColor: AppColors.mainColor,
-                      radius: 22,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Image.asset("images/icon_terminal.png"),
-                      ),
+    return WillPopScope(
+      onWillPop: () async {
+        bool? canGoBack;
+        int tabIndex = _currentTab.value;
+        if (tabIndex == HomePage.tabBrowser) {
+          canGoBack = await _browserTabController?.canGoBack();
+        } else if (tabIndex == HomePage.tabDatabase) {
+          canGoBack = await _databaseTabController?.canGoBack();
+        } else if (tabIndex == HomePage.tabSetting) {
+          canGoBack = await _settingTabController?.canGoBack();
+        }
+        canGoBack??=true;
+        if(canGoBack){
+          LanBroadcastService.getInstance()
+              .stopBroadcast();
+          LanConnectService.getInstance().destroy();
+        }
+        return canGoBack;
+      },
+      child: BasePage(
+        child: DragWidget(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                    child: PageView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  controller: _pageController,
+                  children: [
+                    BrowserPage(
+                      initUrl: "home",
+                      onTabPageCreateListener: (controller) {
+                        _browserTabController = controller;
+                      },
                     ),
-                  );
+                    DatabasePage(
+                      onTabPageCreateListener: (controller) {
+                        _databaseTabController = controller;
+                      },
+                    ),
+                    SettingPage(onTabPageCreateListener: (controller) {
+                      _settingTabController = controller;
+                    })
+                  ],
+                )),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ValueListenableBuilder(
+                      valueListenable: _currentTab,
+                      builder: (_, currentTabValue, child) {
+                        return Column(
+                          children: [
+                            SpaceWidget.createHeightSpace(1,
+                                spaceColor: Colors.grey),
+                            Expanded(
+                                child: Row(
+                              children: [
+                                Expanded(
+                                    child: buildTabItemWidget(
+                                        HomePage.tabBrowser, currentTabValue)),
+                                Expanded(
+                                    child: buildTabItemWidget(
+                                        HomePage.tabDatabase, currentTabValue)),
+                                Expanded(
+                                    child: buildTabItemWidget(
+                                        HomePage.tabSetting, currentTabValue)),
+                              ],
+                            ))
+                          ],
+                        );
+                      }),
+                )
+              ],
+            ),
+            DragChild(
+                right: 10,
+                bottom: 60,
+                onClickListener: () {
+                  ///todo sql命令行窗体
                 },
-              ))
-        ],
+                child: ValueListenableBuilder(
+                  valueListenable: _terminalShow,
+                  builder: (buildContext, isShow, child) {
+                    return Visibility(
+                      visible: isShow,
+                      child: CircleShape(
+                        solidColor: Colors.white,
+                        stokeWidth: 1,
+                        stokeColor: AppColors.mainColor,
+                        radius: 22,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Image.asset("images/icon_terminal.png"),
+                        ),
+                      ),
+                    );
+                  },
+                ))
+          ],
+        ),
       ),
     );
   }
@@ -213,4 +236,6 @@ mixin HomeTabTapController {
   onTabDoubleTap();
 
   onTabLongTap();
+
+  Future<bool> canGoBack();
 }

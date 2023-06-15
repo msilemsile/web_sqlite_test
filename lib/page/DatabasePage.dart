@@ -440,4 +440,9 @@ class _DatabasePageState extends State<DatabasePage>
     return editDBNameWidget;
   }
 
+  @override
+  Future<bool> canGoBack() {
+    return Future.value(true);
+  }
+
 }

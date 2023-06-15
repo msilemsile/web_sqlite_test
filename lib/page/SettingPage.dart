@@ -175,4 +175,9 @@ class _SettingPageState extends State<SettingPage>
 
   @override
   onTabTap(bool isChangedTab) {}
+
+  @override
+  Future<bool> canGoBack() {
+    return Future.value(true);
+  }
 }
