@@ -6,10 +6,12 @@ import 'package:flutter_app/common/widget/AppToast.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
 
+import '../utils/HostHelper.dart';
+
 typedef OnLanConnectCallback = Function(String result);
 
 class LanConnectService {
-  static const int connectListenPort = 9292;
+  static const int connectListenPort = 9494;
 
   LanConnectService._();
 
@@ -42,8 +44,13 @@ class LanConnectService {
 
   Future<LanConnectService> bindService() async {
     Log.message("LanConnectService bindService");
+    String? wifiIP = await HostHelper.getWifiIP();
+    if (wifiIP == null) {
+      AppToast.show("获取局域网ip失败,请检查网络连接");
+      return this;
+    }
     _serverSocket =
-        await RawServerSocket.bind(InternetAddress.anyIPv4, connectListenPort)
+        await RawServerSocket.bind(wifiIP, connectListenPort)
             .catchError((error) {
       Log.message(
           "LanConnectService bindService RawServerSocket.connect error: $error");
@@ -51,6 +58,10 @@ class LanConnectService {
     _serverSocket?.listen((rawSocket) {
       Log.message("LanConnectService bindService connect is coming");
       AppToast.show("主机:${rawSocket.address.host}来连接了");
+      if (_clientSocket != null) {
+        sendMessage("unConnect");
+        unConnectService();
+      }
       _clientSocket = rawSocket;
       sendMessage("connect");
       _listenConnect(null);

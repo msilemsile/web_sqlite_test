@@ -10,7 +10,7 @@ typedef OnLanBroadcastCallback = Function(String result);
 
 class LanBroadcastService {
   static String multicastAddress = "239.123.123.123";
-  static const int multiCastListenPort = 9191;
+  static const int multiCastListenPort = 9797;
 
   LanBroadcastService._();
 
@@ -33,13 +33,15 @@ class LanBroadcastService {
       return this;
     }
     Log.message("LanBroadcastService startBroadcast local wifiIP : $wifiIP");
-    _multiCastSocket ??= await RawDatagramSocket.bind(
-            InternetAddress.anyIPv4, multiCastListenPort)
-        .catchError((error) {
+    _multiCastSocket ??=
+        await RawDatagramSocket.bind(InternetAddress.anyIPv4, multiCastListenPort)
+            .catchError((error) {
       Log.message(
           "LanBroadcastService startBroadcast _multiCastSocket bind error: $error");
     });
     _multiCastSocket?.joinMulticast(InternetAddress(multicastAddress));
+    _isListenBroadcast = false;
+    listenBroadcast(null);
     _stopPeriodicBroadcast = false;
     _periodicBroadcast(wifiIP);
     return this;
@@ -64,7 +66,7 @@ class LanBroadcastService {
     Log.message("LanBroadcastService sendMessage : $message");
     var msgInts = Uint8List.fromList(message.codeUnits);
     RawDatagramSocket sendSocket =
-        await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+    await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
     sendSocket.send(msgInts, InternetAddress(wifiIP), port);
   }
 
@@ -79,15 +81,13 @@ class LanBroadcastService {
     _multiCastSocket?.listen((RawSocketEvent socketEvent) {
       Log.message(
           "LanBroadcastService listenBroadcast socketEvent:  $socketEvent");
-      if (socketEvent == RawSocketEvent.read) {
-        Datagram? datagram = _multiCastSocket?.receive();
-        if (datagram != null) {
-          String receiveData = String.fromCharCodes(datagram.data);
-          Log.message(
-              "LanBroadcastService listenBroadcast receiveData:  $receiveData");
-          for (OnLanBroadcastCallback callback in _callbackList) {
-            callback(receiveData);
-          }
+      Datagram? datagram = _multiCastSocket?.receive();
+      if (datagram != null) {
+        String receiveData = String.fromCharCodes(datagram.data);
+        Log.message(
+            "LanBroadcastService listenBroadcast receiveData:  $receiveData");
+        for (OnLanBroadcastCallback callback in _callbackList) {
+          callback(receiveData);
         }
       }
     });
