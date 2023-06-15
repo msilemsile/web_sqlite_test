@@ -1,10 +1,9 @@
 class HostInfo {
   String platform = "";
   String host = "";
-  String port = "";
   bool _isLocalHost = false;
 
-  HostInfo(this.host, this.port, this.platform);
+  HostInfo(this.host, this.platform);
 
   setIsLocalHost(bool isLocalHost) {
     _isLocalHost = isLocalHost;
@@ -16,7 +15,7 @@ class HostInfo {
 
   @override
   String toString() {
-    return 'HostInfo{platform: $platform, host: $host, post: $port}';
+    return 'HostInfo{platform: $platform, host: $host';
   }
 
   String getPlatformIcon() {

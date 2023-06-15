@@ -58,9 +58,8 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
                 return;
               }
             }
-            String port = jsonData[RouterConstants.dataPort];
             String platform = jsonData[RouterConstants.dataPlatform];
-            _hostInfoList.add(HostInfo(host, port, platform));
+            _hostInfoList.add(HostInfo(host, platform));
             setState(() {});
           }
         }
@@ -78,8 +77,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
       } else {
         AppToast.show("获取局域网ip失败,请检查网络连接");
       }
-    }
-    ();
+    }();
   }
 
   @override
@@ -174,7 +172,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
             Padding(
               padding: const EdgeInsets.fromLTRB(5, 0, 0, 0),
               child: Text(
-                "${hostInfo.host}:${hostInfo.port}",
+                "${hostInfo.host}",
                 style: const TextStyle(color: AppColors.mainColor),
               ),
             ),
@@ -186,18 +184,18 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
                 )),
             Expanded(
                 child: Visibility(
-                  visible: _currentSelectHost.value == index,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Image.asset(
-                      "images/icon_focus.png",
-                      colorBlendMode: BlendMode.srcATop,
-                      color: Colors.red,
-                      width: 20,
-                      height: 20,
-                    ),
-                  ),
-                ))
+              visible: _currentSelectHost.value == index,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Image.asset(
+                  "images/icon_focus.png",
+                  colorBlendMode: BlendMode.srcATop,
+                  color: Colors.red,
+                  width: 20,
+                  height: 20,
+                ),
+              ),
+            ))
           ],
         ),
       ),
@@ -209,49 +207,44 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
       children: [
         Expanded(
             child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              child: const Center(
-                child: Text("取消"),
-              ),
-              onTap: () {
-                widget.hide();
-              },
-            )),
+          behavior: HitTestBehavior.opaque,
+          child: const Center(
+            child: Text("取消"),
+          ),
+          onTap: () {
+            widget.hide();
+          },
+        )),
         SpaceWidget.createWidthSpace(0.5, spaceColor: AppColors.lineColor),
         Expanded(
             child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              child: const Center(
-                child: Text(
-                  "连接",
-                  style: TextStyle(color: AppColors.mainColor),
-                ),
-              ),
-              onTap: () async {
-                if (_hostInfoList.isEmpty) {
-                  return;
-                }
-                int index = _currentSelectHost.value;
-                HostInfo hostInfo = _hostInfoList[index];
-                if (hostInfo.isLocalHost()) {
-                  AppToast.show("已切换到本地工作空间");
-                  LanConnectService.getInstance().unConnectService();
-                  return;
-                }
-                String? wifiIP = await HostHelper.getWifiIP();
-                if (wifiIP == null) {
-                  AppToast.show("请检查wifi网络连接");
-                  return;
-                }
-                LanBroadcastService.getInstance()
-                    .sendBroadcast(hostInfo.host, int.parse(hostInfo.port),
-                    RouterConstants.buildSocketPrepareConnectRoute(wifiIP));
-                await LanConnectService.getInstance()
-                    .connectService(hostInfo);
-                widget.onSelectHostCallback(hostInfo);
-                widget.hide();
-              },
-            ))
+          behavior: HitTestBehavior.opaque,
+          child: const Center(
+            child: Text(
+              "连接",
+              style: TextStyle(color: AppColors.mainColor),
+            ),
+          ),
+          onTap: () async {
+            if (_hostInfoList.isEmpty) {
+              return;
+            }
+            int index = _currentSelectHost.value;
+            HostInfo hostInfo = _hostInfoList[index];
+            if (hostInfo.isLocalHost()) {
+              AppToast.show("已切换到本地工作空间");
+              LanConnectService.getInstance().unConnectService();
+              return;
+            }
+            String? wifiIP = await HostHelper.getWifiIP();
+            if (wifiIP == null) {
+              AppToast.show("请检查wifi网络连接");
+              return;
+            }
+            LanConnectService.getInstance().connectService(hostInfo);
+            widget.onSelectHostCallback(hostInfo);
+          },
+        ))
       ],
     );
   }

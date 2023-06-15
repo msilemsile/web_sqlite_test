@@ -10,7 +10,7 @@ typedef OnLanBroadcastCallback = Function(String result);
 
 class LanBroadcastService {
   static String multicastAddress = "239.123.123.123";
-  static const int broadcastListenPort = 9090;
+  static const int multiCastListenPort = 9191;
 
   LanBroadcastService._();
 
@@ -22,8 +22,7 @@ class LanBroadcastService {
     return _broadcastService!;
   }
 
-  RawDatagramSocket? _broadcastSocket;
-  RawDatagramSocket? _sendSocket;
+  RawDatagramSocket? _multiCastSocket;
   bool _stopPeriodicBroadcast = false;
   bool _isListenBroadcast = false;
 
@@ -34,13 +33,13 @@ class LanBroadcastService {
       return this;
     }
     Log.message("LanBroadcastService startBroadcast local wifiIP : $wifiIP");
-    _broadcastSocket ??=
-        await RawDatagramSocket.bind(InternetAddress.anyIPv4, broadcastListenPort)
-            .catchError((error) {
+    _multiCastSocket ??= await RawDatagramSocket.bind(
+            InternetAddress.anyIPv4, multiCastListenPort)
+        .catchError((error) {
       Log.message(
-          "LanBroadcastService startBroadcast RawDatagramSocket.bind error: $error");
+          "LanBroadcastService startBroadcast _multiCastSocket bind error: $error");
     });
-    _broadcastSocket?.joinMulticast(InternetAddress(multicastAddress));
+    _multiCastSocket?.joinMulticast(InternetAddress(multicastAddress));
     _stopPeriodicBroadcast = false;
     _periodicBroadcast(wifiIP);
     return this;
@@ -52,7 +51,8 @@ class LanBroadcastService {
       return;
     }
     Log.message("LanBroadcastService _periodicBroadcast start");
-    await sendBroadcast(multicastAddress, broadcastListenPort, RouterConstants.buildSocketBroadcastRoute(localWifiIP));
+    await sendBroadcast(multicastAddress, multiCastListenPort,
+        RouterConstants.buildSocketBroadcastRoute(localWifiIP));
     Log.message("LanBroadcastService _periodicBroadcast end");
     Timer(const Duration(seconds: 2), () {
       _periodicBroadcast(localWifiIP);
@@ -63,14 +63,12 @@ class LanBroadcastService {
   Future<void> sendBroadcast(String wifiIP, int port, String message) async {
     Log.message("LanBroadcastService sendMessage : $message");
     var msgInts = Uint8List.fromList(message.codeUnits);
-    _sendSocket ??= await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
-    _sendSocket?.send(msgInts, InternetAddress(wifiIP), port);
+    RawDatagramSocket sendSocket =
+        await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+    sendSocket.send(msgInts, InternetAddress(wifiIP), port);
   }
 
   void listenBroadcast(OnLanBroadcastCallback? callback) async {
-    if (_broadcastSocket == null) {
-      await startBroadcast();
-    }
     if (callback != null) {
       _callbackList.add(callback);
     }
@@ -78,11 +76,11 @@ class LanBroadcastService {
       return;
     }
     _isListenBroadcast = true;
-    _broadcastSocket?.listen((RawSocketEvent socketEvent) {
+    _multiCastSocket?.listen((RawSocketEvent socketEvent) {
       Log.message(
           "LanBroadcastService listenBroadcast socketEvent:  $socketEvent");
       if (socketEvent == RawSocketEvent.read) {
-        Datagram? datagram = _broadcastSocket?.receive();
+        Datagram? datagram = _multiCastSocket?.receive();
         if (datagram != null) {
           String receiveData = String.fromCharCodes(datagram.data);
           Log.message(
@@ -103,10 +101,8 @@ class LanBroadcastService {
     _callbackList.clear();
     _stopPeriodicBroadcast = true;
     _isListenBroadcast = false;
-    _broadcastSocket?.close();
-    _broadcastSocket = null;
-    _sendSocket?.close();
-    _sendSocket = null;
+    _multiCastSocket?.close();
+    _multiCastSocket = null;
     Log.message("LanBroadcastService stopBroadcast over");
   }
 }

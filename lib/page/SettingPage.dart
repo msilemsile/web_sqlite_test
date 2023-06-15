@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/flutter_app.dart';
-import 'package:web_sqlite_test/dialog/DBLanConnectDialog.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
+import 'package:web_sqlite_test/service/LanConnectService.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
-
-import '../model/HostInfo.dart';
 
 class SettingPage extends StatefulWidget {
   final OnTabPageCreateListener onTabPageCreateListener;
@@ -70,20 +68,13 @@ class _SettingPageState extends State<SettingPage>
                               onChanged: (newValue) {
                                 _lanBroadcastControl.value = newValue;
                                 if (newValue) {
+                                  LanConnectService.getInstance().bindService();
                                   LanBroadcastService.getInstance()
-                                      .startBroadcast()
-                                      .then((value) {
-                                    value.listenBroadcast((result) {
-                                      Log.message(
-                                          "listenBroadcast result = $result");
-                                    });
-                                  });
-                                  DBLanConnectDialog(onSelectHostCallback: (HostInfo hostInfo) {
-
-                                  },).show(context);
+                                      .startBroadcast();
                                 } else {
                                   LanBroadcastService.getInstance()
                                       .stopBroadcast();
+                                  LanConnectService.getInstance().destroy();
                                 }
                               }),
                         ),

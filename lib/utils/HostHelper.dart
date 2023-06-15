@@ -16,7 +16,7 @@ abstract class HostHelper {
     if (wifiIP == null) {
       return null;
     }
-    HostInfo hostInfo = HostInfo(wifiIP, port, Platform.operatingSystem);
+    HostInfo hostInfo = HostInfo(wifiIP, Platform.operatingSystem);
     hostInfo.setIsLocalHost(true);
     return hostInfo;
   }

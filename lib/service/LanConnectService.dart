@@ -2,13 +2,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_app/common/log/Log.dart';
+import 'package:flutter_app/common/widget/AppToast.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
 
 typedef OnLanConnectCallback = Function(String result);
 
 class LanConnectService {
-  static const int connectListenPort = 9191;
+  static const int connectListenPort = 9292;
 
   LanConnectService._();
 
@@ -20,38 +21,56 @@ class LanConnectService {
   }
 
   final Set<OnLanBroadcastCallback> _callbackList = {};
-  RawSocket? _connectSocket;
-  bool _isListenConnect = false;
+  RawSocket? _clientSocket;
+  RawServerSocket? _serverSocket;
 
   Future<LanConnectService> connectService(HostInfo hostInfo) async {
-    if (isConnectedService()) {
+    Log.message("LanConnectService connectService hostInfo : $hostInfo");
+    if (_clientSocket != null) {
+      sendMessage("unConnect");
       unConnectService();
     }
-    Log.message("LanConnectService connectService hostInfo : $hostInfo");
-    _connectSocket =
-        await RawSocket.connect(hostInfo.host, int.parse(hostInfo.port))
+    _clientSocket = await RawSocket.connect(hostInfo.host, connectListenPort)
+        .catchError((error) {
+      unConnectService();
+      Log.message(
+          "LanConnectService connectService RawSocket.connect error: $error");
+    });
+    _listenConnect(null);
+    return this;
+  }
+
+  Future<LanConnectService> bindService() async {
+    Log.message("LanConnectService bindService");
+    _serverSocket =
+        await RawServerSocket.bind(InternetAddress.anyIPv4, connectListenPort)
             .catchError((error) {
-      Log.message("LanConnectService connectService RawSocket.connect error: $error");
+      Log.message(
+          "LanConnectService bindService RawServerSocket.connect error: $error");
+    });
+    _serverSocket?.listen((rawSocket) {
+      Log.message("LanConnectService bindService connect is coming");
+      AppToast.show("主机:${rawSocket.address.host}来连接了");
+      _clientSocket = rawSocket;
+      sendMessage("connect");
+      _listenConnect(null);
     });
     return this;
   }
 
-  void listenConnect(OnLanBroadcastCallback? callback) {
+  void _listenConnect(OnLanBroadcastCallback? callback) {
     if (callback != null) {
       _callbackList.add(callback);
     }
-    if (_isListenConnect) {
-      return;
-    }
-    _isListenConnect = true;
-    _connectSocket?.listen((socketEvent) {
-      Log.message("LanConnectService listenBroadcast socketEvent:  $socketEvent");
+    _clientSocket?.listen((socketEvent) {
+      Log.message(
+          "LanConnectService listenBroadcast _clientSocket socketEvent:  $socketEvent");
       if (socketEvent == RawSocketEvent.read) {
-        Uint8List? uint8list =
-            _connectSocket?.read(_connectSocket?.available());
+        Uint8List? uint8list = _clientSocket?.read(_clientSocket?.available());
         if (uint8list != null) {
           String dataReceive = String.fromCharCodes(uint8list);
-          Log.message("LanConnectService listenBroadcast dataReceive:  $dataReceive");
+          Log.message(
+              "LanConnectService listenBroadcast _clientSocket dataReceive:  $dataReceive");
           for (OnLanBroadcastCallback callback in _callbackList) {
             callback(dataReceive);
           }
@@ -63,22 +82,35 @@ class LanConnectService {
   void sendMessage(String message) {
     Log.message("LanConnectService LanConnectService sendMessage: $message");
     var msgInts = Uint8List.fromList(message.codeUnits);
-    _connectSocket?.write(msgInts, 0, msgInts.length);
+    _clientSocket?.write(msgInts, 0, msgInts.length);
   }
 
   bool isConnectedService() {
-    return _connectSocket != null;
+    return _clientSocket != null;
+  }
+
+  void addConnectCallback(OnLanConnectCallback callback) {
+    _callbackList.add(callback);
   }
 
   void removeConnectCallback(OnLanConnectCallback? callback) {
     _callbackList.remove(callback);
   }
 
+  void unbindService() {
+    _serverSocket?.close();
+    _serverSocket = null;
+  }
+
   void unConnectService() {
     _callbackList.clear();
-    _isListenConnect = false;
-    _connectSocket?.close();
-    _connectSocket = null;
+    _clientSocket?.close();
+    _clientSocket = null;
     Log.message("LanConnectService unConnectService over");
+  }
+
+  void destroy() {
+    unbindService();
+    unConnectService();
   }
 }

@@ -1,9 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter_app/common/log/Log.dart';
 import 'package:web_sqlite_test/router/RouterManager.dart';
-
-import '../service/LanConnectService.dart';
 
 abstract class RouterConstants {
   ///base
@@ -16,45 +13,22 @@ abstract class RouterConstants {
   ///param action
   static const String actionExecSQL = "execSQL";
   static const String actionListDB = "listDB";
-  static const String actionPrepareConnect = "prepareConnect";
-  static const String actionConnectSuccess = "connectSuccess";
-  static const String actionUnConnect = "unConnect";
+  static const String actionCreateDB = "createDB";
+  static const String actionDeleteDB = "deleteDB";
   static const String actionBroadcast = "broadcast";
   static const String actionExecSQLResult = "execSQLResult";
 
   ///param data
   static const String dataHost = "host";
-  static const String dataPort = "port";
   static const String dataPlatform = "platform";
   static const String dataResult = "result";
+  static const String dataDBName = "dbName";
+  static const String dataSQL = "sql";
 
   static String buildSocketBroadcastRoute(String wifiIP) {
-    String webSQLRoute =
-        RouterManager.buildWebSQLRoute(RouterConstants.actionBroadcast, {
-      dataHost: wifiIP,
-      dataPort: LanConnectService.connectListenPort.toString(),
-      dataPlatform: Platform.operatingSystem
-    });
-    return webSQLRoute;
-  }
-
-  static String buildSocketPrepareConnectRoute(String wifiIP) {
-    String webSQLRoute =
-        RouterManager.buildWebSQLRoute(RouterConstants.actionPrepareConnect, {
-      dataHost: wifiIP,
-      dataPort: LanConnectService.connectListenPort.toString(),
-      dataPlatform: Platform.operatingSystem
-    });
-    return webSQLRoute;
-  }
-
-  static String buildSocketConnectSuccessRoute(String wifiIP) {
-    String webSQLRoute =
-    RouterManager.buildWebSQLRoute(RouterConstants.actionConnectSuccess, {
-      dataHost: wifiIP,
-      dataPort: LanConnectService.connectListenPort.toString(),
-      dataPlatform: Platform.operatingSystem
-    });
+    String webSQLRoute = RouterManager.buildWebSQLRoute(
+        RouterConstants.actionBroadcast,
+        {dataHost: wifiIP, dataPlatform: Platform.operatingSystem});
     return webSQLRoute;
   }
 
@@ -64,9 +38,27 @@ abstract class RouterConstants {
     return webSQLRoute;
   }
 
+  static String buildCreateDBRoute(String dbName) {
+    String webSQLRoute = RouterManager.buildWebSQLRoute(
+        RouterConstants.actionCreateDB, {dataDBName: dbName});
+    return webSQLRoute;
+  }
+
+  static String buildDeleteDBRoute(String dbName) {
+    String webSQLRoute = RouterManager.buildWebSQLRoute(
+        RouterConstants.actionDeleteDB, {dataDBName: dbName});
+    return webSQLRoute;
+  }
+
+  static String buildExecSQLRoute(String dbName, String sql) {
+    String webSQLRoute = RouterManager.buildWebSQLRoute(
+        RouterConstants.actionExecSQL, {dataDBName: dbName, dataSQL: sql});
+    return webSQLRoute;
+  }
+
   static String buildExecSQLResultRoute(String result) {
     var webSQLRoute = RouterManager.buildWebSQLRoute(
-      RouterConstants.actionExecSQLResult, {dataResult: result});
+        RouterConstants.actionExecSQLResult, {dataResult: result});
     return webSQLRoute;
   }
 }
