@@ -4,20 +4,40 @@ import 'package:network_info_plus/network_info_plus.dart';
 
 import '../model/HostInfo.dart';
 
-abstract class HostHelper {
+class HostHelper {
+  HostHelper._();
 
-  static Future<String?> getWifiIP() async {
-    NetworkInfo networkInfo = NetworkInfo();
-    return networkInfo.getWifiIP();
+  static HostHelper? _instance;
+
+  static getInstance() {
+    _instance ??= HostHelper._();
+    return _instance!;
   }
 
-  static Future<HostInfo?> buildCurrentHostInfo(String port) async {
-    String? wifiIP = await getWifiIP();
+  HostInfo? _localHostInfo;
+
+  String? getWifiIP() {
+    if (_localHostInfo != null) {
+      return _localHostInfo!.host;
+    }
+    return null;
+  }
+
+  void releaseLocalHostInfo() {
+    _localHostInfo = null;
+  }
+
+  Future<HostInfo?> getLocalHostInfo() async {
+    if (_localHostInfo != null) {
+      return _localHostInfo;
+    }
+    NetworkInfo networkInfo = NetworkInfo();
+    String? wifiIP = await networkInfo.getWifiIP();
     if (wifiIP == null) {
       return null;
     }
-    HostInfo hostInfo = HostInfo(wifiIP, Platform.operatingSystem);
-    hostInfo.setIsLocalHost(true);
-    return hostInfo;
+    _localHostInfo = HostInfo(wifiIP, Platform.operatingSystem);
+    _localHostInfo!.setIsLocalHost(true);
+    return _localHostInfo;
   }
 }

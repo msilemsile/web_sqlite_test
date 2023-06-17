@@ -11,6 +11,8 @@ abstract class RouterConstants {
   static const String constParamRouterId = "routerId";
 
   ///param action
+  static const String actionConnect = "connect";
+  static const String actionUnConnect = "unConnect";
   static const String actionExecSQL = "execSQL";
   static const String actionListDB = "listDB";
   static const String actionCreateDB = "createDB";
@@ -24,10 +26,28 @@ abstract class RouterConstants {
   static const String dataResult = "result";
   static const String dataDBName = "dbName";
   static const String dataSQL = "sql";
+  static const String dataShakeHands = "shakeHands";
 
   static String buildSocketBroadcastRoute(String wifiIP) {
     String webSQLRoute = RouterManager.buildWebSQLRoute(
         RouterConstants.actionBroadcast,
+        {dataHost: wifiIP, dataPlatform: Platform.operatingSystem});
+    return webSQLRoute;
+  }
+
+  static String buildSocketConnectRoute(String wifiIP, [int shakeHands = 0]) {
+    String webSQLRoute =
+        RouterManager.buildWebSQLRoute(RouterConstants.actionConnect, {
+      dataHost: wifiIP,
+      dataPlatform: Platform.operatingSystem,
+      dataShakeHands: shakeHands.toString()
+    });
+    return webSQLRoute;
+  }
+
+  static String buildSocketUnConnectRoute(String wifiIP) {
+    String webSQLRoute = RouterManager.buildWebSQLRoute(
+        RouterConstants.actionUnConnect,
         {dataHost: wifiIP, dataPlatform: Platform.operatingSystem});
     return webSQLRoute;
   }

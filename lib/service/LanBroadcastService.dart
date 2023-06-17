@@ -10,7 +10,7 @@ typedef OnLanBroadcastCallback = Function(String result);
 
 class LanBroadcastService {
   static String multicastAddress = "239.123.123.123";
-  static const int multiCastListenPort = 9797;
+  static int connectListenPort = 9191;
 
   LanBroadcastService._();
 
@@ -27,14 +27,15 @@ class LanBroadcastService {
   bool _isListenBroadcast = false;
 
   Future<LanBroadcastService> startBroadcast() async {
-    String? wifiIP = await HostHelper.getWifiIP();
+    String? wifiIP = await HostHelper.getInstance().getWifiIP();
     if (wifiIP == null) {
       AppToast.show("获取ip失败,请检查网络连接");
       return this;
     }
     Log.message("LanBroadcastService startBroadcast local wifiIP : $wifiIP");
     _multiCastSocket ??= await RawDatagramSocket.bind(
-            InternetAddress.anyIPv4, multiCastListenPort)
+            InternetAddress.anyIPv4, connectListenPort,
+            reusePort: true)
         .catchError((error) {
       Log.message(
           "LanBroadcastService startBroadcast _multiCastSocket bind error: $error");
@@ -53,7 +54,7 @@ class LanBroadcastService {
       return;
     }
     Log.message("LanBroadcastService _periodicBroadcast start");
-    await sendBroadcast(multicastAddress, multiCastListenPort,
+    await sendBroadcast(multicastAddress, connectListenPort,
         RouterConstants.buildSocketBroadcastRoute(localWifiIP));
     Log.message("LanBroadcastService _periodicBroadcast end");
     Timer(const Duration(seconds: 2), () {
@@ -106,6 +107,7 @@ class LanBroadcastService {
     _callbackList.clear();
     _stopPeriodicBroadcast = true;
     _isListenBroadcast = false;
+    _multiCastSocket?.leaveMulticast(InternetAddress(multicastAddress));
     _multiCastSocket?.close();
     _multiCastSocket = null;
     Log.message("LanBroadcastService stopBroadcast over");

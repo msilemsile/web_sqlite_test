@@ -4,11 +4,13 @@ import 'dart:typed_data';
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:flutter_app/common/widget/AppToast.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
-import 'package:web_sqlite_test/service/LanBroadcastService.dart';
+import 'package:web_sqlite_test/router/RouterConstants.dart';
 
+import '../model/WebSQLRouter.dart';
+import '../router/RouterManager.dart';
 import '../utils/HostHelper.dart';
 
-typedef OnLanConnectCallback = Function(String result);
+typedef OnLanConnectCallback = Function(WebSQLRouter webSQLRouter);
 
 class LanConnectService {
   static const int connectListenPort = 9494;
@@ -22,14 +24,20 @@ class LanConnectService {
     return _lanConnectService!;
   }
 
-  final Set<OnLanBroadcastCallback> _callbackList = {};
+  final Set<OnLanConnectCallback> _callbackList = {};
   RawSocket? _clientSocket;
   RawServerSocket? _serverSocket;
+  HostInfo? _connectHostInfo;
 
   Future<LanConnectService> connectService(HostInfo hostInfo) async {
     Log.message("LanConnectService connectService hostInfo : $hostInfo");
+    String? wifiIP = await HostHelper.getInstance().getWifiIP();
+    if (wifiIP == null) {
+      AppToast.show("获取ip失败,请检查网络连接");
+      return this;
+    }
     if (_clientSocket != null) {
-      sendMessage("unConnect");
+      sendMessage(RouterConstants.buildSocketUnConnectRoute(wifiIP));
       unConnectService();
     }
     _clientSocket = await RawSocket.connect(hostInfo.host, connectListenPort)
@@ -44,32 +52,31 @@ class LanConnectService {
 
   Future<LanConnectService> bindService() async {
     Log.message("LanConnectService bindService");
-    String? wifiIP = await HostHelper.getWifiIP();
+    String? wifiIP = await HostHelper.getInstance().getWifiIP();
     if (wifiIP == null) {
-      AppToast.show("获取局域网ip失败,请检查网络连接");
+      AppToast.show("获取ip失败,请检查网络连接");
       return this;
     }
     _serverSocket =
-        await RawServerSocket.bind(InternetAddress.anyIPv4, connectListenPort)
-            .catchError((error) {
+    await RawServerSocket.bind(InternetAddress.anyIPv4, connectListenPort)
+        .catchError((error) {
       Log.message(
           "LanConnectService bindService RawServerSocket.connect error: $error");
     });
     _serverSocket?.listen((rawSocket) {
       Log.message("LanConnectService bindService connect is coming");
-      AppToast.show("主机:${rawSocket.address.host}来连接了");
       if (_clientSocket != null) {
-        sendMessage("unConnect");
+        sendMessage(RouterConstants.buildSocketUnConnectRoute(wifiIP));
         unConnectService();
       }
       _clientSocket = rawSocket;
-      sendMessage("connect");
+      sendMessage(RouterConstants.buildSocketConnectRoute(wifiIP, 1));
       _listenConnect(null);
     });
     return this;
   }
 
-  void _listenConnect(OnLanBroadcastCallback? callback) {
+  void _listenConnect(OnLanConnectCallback? callback) {
     if (callback != null) {
       _callbackList.add(callback);
     }
@@ -82,8 +89,39 @@ class LanConnectService {
           String dataReceive = String.fromCharCodes(uint8list);
           Log.message(
               "LanConnectService listenBroadcast _clientSocket dataReceive:  $dataReceive");
-          for (OnLanBroadcastCallback callback in _callbackList) {
-            callback(dataReceive);
+          WebSQLRouter? webSQLRouter =
+          RouterManager.parseToWebSQLRouter(dataReceive);
+          if (webSQLRouter != null && webSQLRouter.action != null) {
+            Map<String, dynamic>? jsonData = webSQLRouter.jsonData;
+            String? host;
+            String? platform;
+            String? shakeHands;
+            if (jsonData != null) {
+              host = jsonData[RouterConstants.dataHost];
+              platform = jsonData[RouterConstants.dataPlatform];
+              shakeHands = jsonData[RouterConstants.dataShakeHands];
+            }
+            if (webSQLRouter.action!.compareTo(RouterConstants.actionConnect) ==
+                0) {
+              if (host != null && platform != null) {
+                _connectHostInfo = HostInfo(host, platform);
+                AppToast.show("与主机:$host建立了连接");
+                if (shakeHands != null && shakeHands.compareTo("1") == 0) {
+                  String? wifiIP = HostHelper.getInstance().getWifiIP();
+                  if (wifiIP != null) {
+                    sendMessage(
+                        RouterConstants.buildSocketConnectRoute(wifiIP));
+                  }
+                }
+              }
+            } else if (webSQLRouter.action!
+                .compareTo(RouterConstants.actionUnConnect) ==
+                0) {
+              AppToast.show("与主机:$host断开");
+            }
+            for (OnLanConnectCallback callback in _callbackList) {
+              callback(webSQLRouter);
+            }
           }
         }
       }
@@ -97,7 +135,7 @@ class LanConnectService {
   }
 
   bool isConnectedService() {
-    return _clientSocket != null;
+    return _connectHostInfo != null;
   }
 
   void addConnectCallback(OnLanConnectCallback callback) {
@@ -114,6 +152,7 @@ class LanConnectService {
   }
 
   void unConnectService() {
+    _connectHostInfo = null;
     _callbackList.clear();
     _clientSocket?.close();
     _clientSocket = null;

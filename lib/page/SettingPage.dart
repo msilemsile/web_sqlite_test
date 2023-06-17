@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/flutter_app.dart';
+import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
 import 'package:web_sqlite_test/service/LanConnectService.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
+import 'package:web_sqlite_test/utils/HostHelper.dart';
 
 class SettingPage extends StatefulWidget {
   final OnTabPageCreateListener onTabPageCreateListener;
@@ -65,13 +67,24 @@ class _SettingPageState extends State<SettingPage>
                           color: Colors.transparent,
                           child: Switch(
                               value: controlValue,
-                              onChanged: (newValue) {
+                              onChanged: (newValue) async {
                                 _lanBroadcastControl.value = newValue;
                                 if (newValue) {
-                                  LanConnectService.getInstance().bindService();
-                                  LanBroadcastService.getInstance()
+                                  HostInfo? hostInfo =
+                                      await HostHelper.getInstance()
+                                          .getLocalHostInfo();
+                                  if (hostInfo == null) {
+                                    AppToast.show("获取ip失败,请检查网络连接");
+                                    _lanBroadcastControl.value = false;
+                                    return;
+                                  }
+                                  await LanConnectService.getInstance()
+                                      .bindService();
+                                  await LanBroadcastService.getInstance()
                                       .startBroadcast();
                                 } else {
+                                  HostHelper.getInstance()
+                                      .releaseLocalHostInfo();
                                   LanBroadcastService.getInstance()
                                       .stopBroadcast();
                                   LanConnectService.getInstance().destroy();

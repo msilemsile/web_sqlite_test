@@ -66,8 +66,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
       }
     };
     () async {
-      var currentHostInfo = await HostHelper.buildCurrentHostInfo(
-          LanConnectService.connectListenPort.toString());
+      var currentHostInfo = await HostHelper.getInstance().getLocalHostInfo();
       if (currentHostInfo != null) {
         _hostInfoList.add(currentHostInfo);
         SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
@@ -236,7 +235,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
               LanConnectService.getInstance().unConnectService();
               return;
             }
-            String? wifiIP = await HostHelper.getWifiIP();
+            String? wifiIP = await HostHelper.getInstance().getWifiIP();
             if (wifiIP == null) {
               AppToast.show("请检查wifi网络连接");
               return;
