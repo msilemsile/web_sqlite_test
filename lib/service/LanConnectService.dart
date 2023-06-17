@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -11,9 +12,13 @@ import '../router/RouterManager.dart';
 import '../utils/HostHelper.dart';
 
 typedef OnLanConnectCallback = Function(WebSQLRouter webSQLRouter);
+typedef OnConnectStateCallback = Function(String state);
 
 class LanConnectService {
   static const int connectListenPort = 9494;
+  static const String connectStateSuccess = "连接成功";
+  static const String connectStateTimeout = "连接超时";
+  static const String connectStateError = "连接失败";
 
   LanConnectService._();
 
@@ -28,8 +33,11 @@ class LanConnectService {
   RawSocket? _clientSocket;
   RawServerSocket? _serverSocket;
   HostInfo? _connectHostInfo;
+  OnConnectStateCallback? _connectStateCallback;
+  Timer? _connectTimeoutTimer;
 
-  Future<LanConnectService> connectService(HostInfo hostInfo) async {
+  Future<LanConnectService> connectService(HostInfo hostInfo,
+      [OnConnectStateCallback? onConnectStateCallback]) async {
     Log.message("LanConnectService connectService hostInfo : $hostInfo");
     String? wifiIP = await HostHelper.getInstance().getWifiIP();
     if (wifiIP == null) {
@@ -40,8 +48,18 @@ class LanConnectService {
       sendMessage(RouterConstants.buildSocketUnConnectRoute(wifiIP));
       unConnectService();
     }
+    _connectStateCallback = onConnectStateCallback;
+    _connectTimeoutTimer = Timer(const Duration(seconds: 3), () {
+      if (_connectStateCallback != null) {
+        _connectStateCallback!(connectStateTimeout);
+      }
+      unConnectService();
+    });
     _clientSocket = await RawSocket.connect(hostInfo.host, connectListenPort)
         .catchError((error) {
+      if (_connectStateCallback != null) {
+        _connectStateCallback!(connectStateError);
+      }
       unConnectService();
       Log.message(
           "LanConnectService connectService RawSocket.connect error: $error");
@@ -58,8 +76,8 @@ class LanConnectService {
       return this;
     }
     _serverSocket =
-    await RawServerSocket.bind(InternetAddress.anyIPv4, connectListenPort)
-        .catchError((error) {
+        await RawServerSocket.bind(InternetAddress.anyIPv4, connectListenPort)
+            .catchError((error) {
       Log.message(
           "LanConnectService bindService RawServerSocket.connect error: $error");
     });
@@ -90,7 +108,7 @@ class LanConnectService {
           Log.message(
               "LanConnectService listenBroadcast _clientSocket dataReceive:  $dataReceive");
           WebSQLRouter? webSQLRouter =
-          RouterManager.parseToWebSQLRouter(dataReceive);
+              RouterManager.parseToWebSQLRouter(dataReceive);
           if (webSQLRouter != null && webSQLRouter.action != null) {
             Map<String, dynamic>? jsonData = webSQLRouter.jsonData;
             String? host;
@@ -104,7 +122,11 @@ class LanConnectService {
             if (webSQLRouter.action!.compareTo(RouterConstants.actionConnect) ==
                 0) {
               if (host != null && platform != null) {
+                cancelConnectTimeoutTimer();
                 _connectHostInfo = HostInfo(host, platform);
+                if (_connectStateCallback != null) {
+                  _connectStateCallback!(connectStateSuccess);
+                }
                 AppToast.show("与主机:$host建立了连接");
                 if (shakeHands != null && shakeHands.compareTo("1") == 0) {
                   String? wifiIP = HostHelper.getInstance().getWifiIP();
@@ -115,7 +137,7 @@ class LanConnectService {
                 }
               }
             } else if (webSQLRouter.action!
-                .compareTo(RouterConstants.actionUnConnect) ==
+                    .compareTo(RouterConstants.actionUnConnect) ==
                 0) {
               AppToast.show("与主机:$host断开");
             }
@@ -151,8 +173,15 @@ class LanConnectService {
     _serverSocket = null;
   }
 
+  void cancelConnectTimeoutTimer() {
+    _connectTimeoutTimer?.cancel();
+    _connectTimeoutTimer = null;
+  }
+
   void unConnectService() {
+    cancelConnectTimeoutTimer();
     _connectHostInfo = null;
+    _connectStateCallback = null;
     _callbackList.clear();
     _clientSocket?.close();
     _clientSocket = null;

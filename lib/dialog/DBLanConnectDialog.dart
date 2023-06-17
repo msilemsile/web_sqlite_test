@@ -231,17 +231,28 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
             int index = _currentSelectHost.value;
             HostInfo hostInfo = _hostInfoList[index];
             if (hostInfo.isLocalHost()) {
-              AppToast.show("已切换到本地工作空间");
+              AppToast.show("已切换到本地LAN缓存空间");
               LanConnectService.getInstance().unConnectService();
+              widget.onSelectHostCallback(hostInfo);
+              widget.hide();
               return;
             }
             String? wifiIP = await HostHelper.getInstance().getWifiIP();
             if (wifiIP == null) {
-              AppToast.show("请检查wifi网络连接");
+              AppToast.show("获取ip失败,请检查网络连接");
               return;
             }
-            LanConnectService.getInstance().connectService(hostInfo);
-            widget.onSelectHostCallback(hostInfo);
+            LanConnectService.getInstance().connectService(hostInfo,
+                (connectState) {
+              if (connectState
+                      .compareTo(LanConnectService.connectStateSuccess) ==
+                  0) {
+                widget.onSelectHostCallback(hostInfo);
+                widget.hide();
+              } else {
+                AppToast.show(connectState);
+              }
+            });
           },
         ))
       ],
