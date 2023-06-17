@@ -29,13 +29,13 @@ class LanBroadcastService {
   Future<LanBroadcastService> startBroadcast() async {
     String? wifiIP = await HostHelper.getWifiIP();
     if (wifiIP == null) {
-      AppToast.show("获取局域网ip失败,请检查网络连接");
+      AppToast.show("获取ip失败,请检查网络连接");
       return this;
     }
     Log.message("LanBroadcastService startBroadcast local wifiIP : $wifiIP");
-    _multiCastSocket ??=
-        await RawDatagramSocket.bind(InternetAddress.anyIPv4, multiCastListenPort)
-            .catchError((error) {
+    _multiCastSocket ??= await RawDatagramSocket.bind(
+            InternetAddress.anyIPv4, multiCastListenPort)
+        .catchError((error) {
       Log.message(
           "LanBroadcastService startBroadcast _multiCastSocket bind error: $error");
     });
@@ -66,11 +66,16 @@ class LanBroadcastService {
     Log.message("LanBroadcastService sendMessage : $message");
     var msgInts = Uint8List.fromList(message.codeUnits);
     RawDatagramSocket sendSocket =
-    await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+        await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
     sendSocket.send(msgInts, InternetAddress(wifiIP), port);
+    sendSocket.close();
   }
 
   void listenBroadcast(OnLanBroadcastCallback? callback) async {
+    if (_multiCastSocket == null) {
+      AppToast.show("请在设置页打开局域网数据互操作");
+      return;
+    }
     if (callback != null) {
       _callbackList.add(callback);
     }

@@ -50,7 +50,7 @@ class LanConnectService {
       return this;
     }
     _serverSocket =
-        await RawServerSocket.bind(wifiIP, connectListenPort)
+        await RawServerSocket.bind(InternetAddress.anyIPv4, connectListenPort)
             .catchError((error) {
       Log.message(
           "LanConnectService bindService RawServerSocket.connect error: $error");
