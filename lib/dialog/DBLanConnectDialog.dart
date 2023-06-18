@@ -171,7 +171,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
             Padding(
               padding: const EdgeInsets.fromLTRB(5, 0, 0, 0),
               child: Text(
-                "${hostInfo.host}",
+                hostInfo.host,
                 style: const TextStyle(color: AppColors.mainColor),
               ),
             ),
@@ -231,7 +231,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
             int index = _currentSelectHost.value;
             HostInfo hostInfo = _hostInfoList[index];
             if (hostInfo.isLocalHost()) {
-              AppToast.show("已切换到本地LAN缓存空间");
+              AppToast.show("已切换到局域网的本地缓存空间");
               LanConnectService.getInstance().unConnectService();
               widget.onSelectHostCallback(hostInfo);
               widget.hide();
@@ -242,8 +242,10 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
               AppToast.show("获取ip失败,请检查网络连接");
               return;
             }
+            AppLoading.show();
             LanConnectService.getInstance().connectService(hostInfo,
                 (connectState) {
+              AppLoading.hide();
               if (connectState
                       .compareTo(LanConnectService.connectStateSuccess) ==
                   0) {

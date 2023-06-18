@@ -251,7 +251,7 @@ Widget buildPopupWindowsItem(
 
 ///展示app全局loading
 void showAppLoading(BuildContext context) {
-  AppLoading.show(context, true);
+  AppLoading.show(true);
 }
 
 ///取消app全局loading

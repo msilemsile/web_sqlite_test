@@ -8,11 +8,15 @@ import 'package:web_sqlite_test/theme/AppColors.dart';
 import '../database/DBConstants.dart';
 import '../database/DBDirConst.dart';
 
+typedef OnChangeWorkspaceCallback = Function(DBDirConst dbDirConst,
+    [HostInfo? hostInfo]);
+
 class DBWorkspaceDialog extends StatefulWidget {
   final AppDialog appDialog = AppDialog();
   late final BuildContext _buildContext;
+  final OnChangeWorkspaceCallback changeWorkspaceCallback;
 
-  DBWorkspaceDialog({super.key});
+  DBWorkspaceDialog({super.key, required this.changeWorkspaceCallback});
 
   @override
   State<StatefulWidget> createState() {
@@ -100,13 +104,16 @@ class _DBWorkspaceDialogState extends State<DBWorkspaceDialog> {
               .setCancelTxt("取消")
               .setConfirmTxt("确定")
               .setConfirmCallback((alertDialog) {
-            DBWorkspaceManager.getInstance().setCurrentDBDir(dbDirConst);
-            setState(() {});
+            widget.changeWorkspaceCallback(dbDirConst);
+            widget.hide();
           }).show(context);
         } else if (dbDirConst == DBDirConst.lan) {
-          DBLanConnectDialog(onSelectHostCallback: (selectHostInfo){
-
-          },).show(context);
+          DBLanConnectDialog(
+            onSelectHostCallback: (selectHostInfo) {
+              widget.changeWorkspaceCallback(dbDirConst, selectHostInfo);
+              widget.hide();
+            },
+          ).show(context);
         } else if (dbDirConst == DBDirConst.server) {
           AppToast.show("该功能开发中");
         }

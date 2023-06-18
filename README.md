@@ -2,7 +2,7 @@
 
 跨平台sqlite使用,一个示例
 
-android | ios | windows
+android | ios | windows | macos(WebView暂不支持) | linux(WebView暂不支持)
 
 功能：
 

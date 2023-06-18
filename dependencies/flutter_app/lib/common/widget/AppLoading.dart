@@ -1,19 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/AppManager.dart';
 import 'LoadingWidget.dart';
 
 ///app全局loading
 class AppLoading {
-  static OverlayEntry? _toastOverLayEntry;
+  static OverlayEntry? _loadingOverLayEntry;
   static bool isShowing = false;
 
   ///展示loading
-  static void show(BuildContext context, [bool canTouchOutSide = false]) {
+  static void show([bool canTouchOutSide = false]) {
     if (isShowing) {
       return;
     }
-    _toastOverLayEntry ??= OverlayEntry(builder: (context) {
+    _loadingOverLayEntry ??= OverlayEntry(builder: (context) {
         return Listener(
           behavior: canTouchOutSide
               ? HitTestBehavior.translucent
@@ -23,19 +24,19 @@ class AppLoading {
           ),
         );
       });
-    Overlay.of(context).insert(_toastOverLayEntry!);
+    AppManager.getInstance().getOverlay()?.insert(_loadingOverLayEntry!);
     isShowing = true;
   }
 
   ///取消loading
   static void hide() {
-    if (_toastOverLayEntry == null) {
+    if (_loadingOverLayEntry == null) {
       return;
     }
     if (!isShowing) {
       return;
     }
-    _toastOverLayEntry?.remove();
+    _loadingOverLayEntry?.remove();
     isShowing = false;
   }
 }
