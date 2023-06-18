@@ -11,6 +11,7 @@ import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/EmptyDataList.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
+import 'package:web_sqlite_test/service/LanConnectService.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
 import '../database/DBDirConst.dart';
@@ -27,7 +28,10 @@ class DatabasePage extends StatefulWidget {
 }
 
 class _DatabasePageState extends State<DatabasePage>
-    with AutomaticKeepAliveClientMixin, HomeTabTapController {
+    with
+        AutomaticKeepAliveClientMixin,
+        HomeTabTapController,
+        OnLanServiceCallback {
   static const int exchangeWorkspaceAction = 0;
   static const int exeSqlAction = 1;
   static const int refreshDatabaseAction = 2;
@@ -38,17 +42,26 @@ class _DatabasePageState extends State<DatabasePage>
   final ValueNotifier<DBDirConst> _currentWorkspace =
       ValueNotifier(DBDirConst.local);
   final ValueNotifier<HostInfo?> _currentHostInfo = ValueNotifier(null);
+  final ValueNotifier<List> _currentDBFileList =
+      ValueNotifier([EmptyDataList()]);
 
   GlobalKey<LiquidPullToRefreshState> pullToRefreshState = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    LanConnectService.getInstance().addServiceCallback(this);
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       widget.onTabPageCreateListener(this);
     });
     _currentWorkspace.value =
         DBWorkspaceManager.getInstance().getCurrentDBDir();
+  }
+
+  @override
+  void dispose() {
+    LanConnectService.getInstance().removeServiceCallback(this);
+    super.dispose();
   }
 
   @override
@@ -63,20 +76,9 @@ class _DatabasePageState extends State<DatabasePage>
                 springAnimationDurationInMilliseconds: 400,
                 showChildOpacityTransition: false,
                 onRefresh: pullToOnRefresh,
-                child: FutureBuilder(
-                    future: loadCurrentWorkspaceData(),
-                    initialData: const [],
-                    builder: (buildContext, asyncSnapshot) {
-                      List dataList = [];
-                      if (asyncSnapshot.connectionState ==
-                          ConnectionState.done) {
-                        if (asyncSnapshot.data != null &&
-                            asyncSnapshot.data!.isNotEmpty) {
-                          dataList.addAll(asyncSnapshot.data as Iterable);
-                        } else {
-                          dataList.add(EmptyDataList());
-                        }
-                      }
+                child: ValueListenableBuilder(
+                    valueListenable: _currentDBFileList,
+                    builder: (buildContext, dataList, child) {
                       return ListView.separated(
                         padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
                         itemCount: dataList.length,
@@ -190,7 +192,7 @@ class _DatabasePageState extends State<DatabasePage>
                             height: 32,
                             child: Center(
                               child: Text(
-                                "连接",
+                                "命令",
                                 style: TextStyle(color: Colors.white),
                               ),
                             ),
@@ -464,4 +466,13 @@ class _DatabasePageState extends State<DatabasePage>
   Future<bool> canGoBack() {
     return Future.value(true);
   }
+
+  @override
+  onConnectState(String connectState) {}
+
+  @override
+  onExecSQLResult(String result) {}
+
+  @override
+  onListDBFile(List<DBFileInfo> dbFileList) {}
 }

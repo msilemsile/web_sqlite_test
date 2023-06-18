@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:flutter_app/common/widget/AppToast.dart';
+import 'package:sqlite3/sqlite3.dart';
+import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
+import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/router/RouterConstants.dart';
 
@@ -12,6 +16,8 @@ import '../router/RouterManager.dart';
 import '../utils/HostHelper.dart';
 
 typedef OnConnectStateCallback = Function(String state);
+typedef OnWebRouterListDBCallback = Function(List<DBFileInfo> dbFileList);
+typedef OnWebRouterExeSQLCallback = Function(String reslut);
 
 class LanConnectService {
   static const int connectListenPort = 9494;
@@ -28,15 +34,13 @@ class LanConnectService {
     return _lanConnectService!;
   }
 
-  final Set<OnSendWebRouterMessageCallback> _sendWebRouterMsgCallback = {};
   RawSocket? _clientSocket;
   RawServerSocket? _serverSocket;
   HostInfo? _connectHostInfo;
-  OnConnectStateCallback? _connectStateCallback;
+  Set<OnLanServiceCallback> _serviceCallbackSet = Set<OnLanServiceCallback>();
   Timer? _connectTimeoutTimer;
 
-  Future<LanConnectService> connectService(HostInfo hostInfo,
-      [OnConnectStateCallback? onConnectStateCallback]) async {
+  Future<LanConnectService> connectService(HostInfo hostInfo) async {
     Log.message("LanConnectService connectService hostInfo : $hostInfo");
     String? wifiIP = await HostHelper.getInstance().getWifiIP();
     if (wifiIP == null) {
@@ -47,17 +51,16 @@ class LanConnectService {
       sendMessage(RouterConstants.buildSocketUnConnectRoute(wifiIP));
       unConnectService();
     }
-    _connectStateCallback = onConnectStateCallback;
     _connectTimeoutTimer = Timer(const Duration(seconds: 3), () {
-      if (_connectStateCallback != null) {
-        _connectStateCallback!(connectStateTimeout);
+      for (OnLanServiceCallback serviceCallback in _serviceCallbackSet) {
+        serviceCallback.onConnectState(connectStateTimeout);
       }
       unConnectService();
     });
     _clientSocket = await RawSocket.connect(hostInfo.host, connectListenPort)
         .catchError((error) {
-      if (_connectStateCallback != null) {
-        _connectStateCallback!(connectStateError);
+      for (OnLanServiceCallback serviceCallback in _serviceCallbackSet) {
+        serviceCallback.onConnectState(connectStateError);
       }
       unConnectService();
       Log.message(
@@ -107,21 +110,21 @@ class LanConnectService {
               RouterManager.parseToWebSQLRouter(dataReceive);
           if (webSQLRouter != null && webSQLRouter.action != null) {
             Map<String, dynamic>? jsonData = webSQLRouter.jsonData;
-            String? host;
-            String? platform;
-            String? shakeHands;
-            if (jsonData != null) {
-              host = jsonData[RouterConstants.dataHost];
-              platform = jsonData[RouterConstants.dataPlatform];
-              shakeHands = jsonData[RouterConstants.dataShakeHands];
-            }
             if (webSQLRouter.action!.compareTo(RouterConstants.actionConnect) ==
                 0) {
+              String? host;
+              String? platform;
+              String? shakeHands;
+              if (jsonData != null) {
+                host = jsonData[RouterConstants.dataHost];
+                platform = jsonData[RouterConstants.dataPlatform];
+                shakeHands = jsonData[RouterConstants.dataShakeHands];
+              }
               if (host != null && platform != null) {
                 cancelConnectTimeoutTimer();
                 _connectHostInfo = HostInfo(host, platform);
-                if (_connectStateCallback != null) {
-                  _connectStateCallback!(connectStateSuccess);
+                for (OnLanServiceCallback serviceCallback in _serviceCallbackSet) {
+                  serviceCallback.onConnectState(connectStateSuccess);
                 }
                 AppToast.show("与主机:$host建立了连接");
                 if (shakeHands != null && shakeHands.compareTo("1") == 0) {
@@ -135,11 +138,122 @@ class LanConnectService {
             } else if (webSQLRouter.action!
                     .compareTo(RouterConstants.actionUnConnect) ==
                 0) {
+              String? host;
+              if (jsonData != null) {
+                host = jsonData[RouterConstants.dataHost];
+              }
               AppToast.show("与主机:$host断开");
-            } else {
-              for (OnSendWebRouterMessageCallback webRouterMsgCallback
-                  in _sendWebRouterMsgCallback) {
-                webRouterMsgCallback.onMessageCallback(webSQLRouter);
+            } else if (webSQLRouter.action!.compareTo(RouterConstants.actionListDB) ==
+                0) {
+              DBWorkspaceManager.getInstance()
+                  .listWorkspaceDBFile()
+                  .then((dbFileList) {
+                sendMessage(RouterConstants.buildListDBResultRoute(dbFileList));
+              });
+            } else if (webSQLRouter.action!
+                    .compareTo(RouterConstants.actionListDBResult) ==
+                0) {
+              List<DBFileInfo> dbFileList = [];
+              if (jsonData != null) {
+                String? dbFileListJson = jsonData[RouterConstants.dataResult];
+                if (dbFileListJson != null && dbFileListJson.isNotEmpty) {
+                  dbFileList = jsonDecode(dbFileListJson);
+                }
+              }
+              for (OnLanServiceCallback serviceCallback in _serviceCallbackSet) {
+                serviceCallback.onListDBFile(dbFileList);
+              }
+            } else if (webSQLRouter.action!.compareTo(RouterConstants.actionCreateDB) ==
+                0) {
+              if (jsonData != null) {
+                String? databaseName = jsonData[RouterConstants.dataDBName];
+                if (databaseName != null) {
+                  Future<Database?>? openOrCreateWorkspaceDB =
+                      DBWorkspaceManager.getInstance()
+                          .openOrCreateWorkspaceDB(databaseName);
+                  if (openOrCreateWorkspaceDB != null) {
+                    openOrCreateWorkspaceDB.then((value) {
+                      if (value != null) {
+                        sendMessage(RouterConstants.buildCreateDBResultRoute(
+                            databaseName, 1));
+                      } else {
+                        sendMessage(RouterConstants.buildCreateDBResultRoute(
+                            databaseName, 0));
+                      }
+                    });
+                  } else {
+                    sendMessage(RouterConstants.buildCreateDBResultRoute(
+                        databaseName, 0));
+                  }
+                }
+              }
+            } else if (webSQLRouter.action!
+                    .compareTo(RouterConstants.actionCreateDBResult) ==
+                0) {
+              if (jsonData != null) {
+                String? databaseName = jsonData[RouterConstants.dataDBName];
+                String? result = jsonData[RouterConstants.dataResult];
+                if (databaseName != null) {
+                  if (result != null && result.compareTo("1") == 0) {
+                    AppToast.show("创建$databaseName数据库成功");
+                  } else {
+                    AppToast.show("创建$databaseName数据库失败!");
+                  }
+                }
+              }
+            } else if (webSQLRouter.action!
+                    .compareTo(RouterConstants.actionDeleteDB) ==
+                0) {
+              if (jsonData != null) {
+                String? databaseName = jsonData[RouterConstants.dataDBName];
+                if (databaseName != null) {
+                  DBWorkspaceManager.getInstance()
+                      .deleteWorkspaceDB(databaseName)
+                      .then((value) {
+                    sendMessage(RouterConstants.buildDeleteDBResultRoute(
+                        databaseName, 1));
+                  });
+                }
+              }
+            } else if (webSQLRouter.action!
+                    .compareTo(RouterConstants.actionDeleteDBResult) ==
+                0) {
+              if (jsonData != null) {
+                String? databaseName = jsonData[RouterConstants.dataDBName];
+                String? result = jsonData[RouterConstants.dataResult];
+                if (databaseName != null) {
+                  if (result != null && result.compareTo("1") == 0) {
+                    AppToast.show("删除$databaseName数据库成功");
+                  } else {
+                    AppToast.show("删除$databaseName数据库失败!");
+                  }
+                }
+              }
+            } else if (webSQLRouter.action!.compareTo(RouterConstants.actionExecSQL) ==
+                0) {
+              if (jsonData != null) {
+                String? databaseName = jsonData[RouterConstants.dataDBName];
+                String? dataSql = jsonData[RouterConstants.dataSQL];
+                if (databaseName != null && dataSql != null) {
+                  DBWorkspaceManager.getInstance()
+                      .getDBCommandHelper(databaseName)
+                      .execSql(dataSql, [], (result) {
+                    sendMessage(RouterConstants.buildExecSQLResultRoute(
+                        databaseName, result));
+                  });
+                }
+              }
+            } else if (webSQLRouter.action!
+                    .compareTo(RouterConstants.actionExecSQLResult) ==
+                0) {
+              if (jsonData != null) {
+                String? databaseName = jsonData[RouterConstants.dataDBName];
+                String? dataResult = jsonData[RouterConstants.dataResult];
+                if (databaseName != null && dataResult != null) {
+                  for (OnLanServiceCallback serviceCallback in _serviceCallbackSet) {
+                    serviceCallback.onExecSQLResult(dataResult);
+                  }
+                }
               }
             }
           }
@@ -162,14 +276,6 @@ class LanConnectService {
     return _connectHostInfo;
   }
 
-  void addSendMessageCallback(OnSendWebRouterMessageCallback callback) {
-    _sendWebRouterMsgCallback.add(callback);
-  }
-
-  void removeSendMessageCallback(OnSendWebRouterMessageCallback? callback) {
-    _sendWebRouterMsgCallback.remove(callback);
-  }
-
   void unbindService() {
     _serverSocket?.close();
     _serverSocket = null;
@@ -180,11 +286,18 @@ class LanConnectService {
     _connectTimeoutTimer = null;
   }
 
+  void addServiceCallback(OnLanServiceCallback serviceCallback) {
+    _serviceCallbackSet.add(serviceCallback);
+  }
+
+  void removeServiceCallback(OnLanServiceCallback? serviceCallback) {
+    _serviceCallbackSet.remove(serviceCallback);
+  }
+
   void unConnectService() {
     cancelConnectTimeoutTimer();
     _connectHostInfo = null;
-    _connectStateCallback = null;
-    _sendWebRouterMsgCallback.clear();
+    _serviceCallbackSet.clear();
     _clientSocket?.close();
     _clientSocket = null;
     Log.message("LanConnectService unConnectService over");
@@ -196,6 +309,10 @@ class LanConnectService {
   }
 }
 
-mixin OnSendWebRouterMessageCallback {
-  onMessageCallback(WebSQLRouter webSQLRouter);
+mixin OnLanServiceCallback {
+  onConnectState(String connectState);
+
+  onListDBFile(List<DBFileInfo> dbFileList);
+
+  onExecSQLResult(String result);
 }

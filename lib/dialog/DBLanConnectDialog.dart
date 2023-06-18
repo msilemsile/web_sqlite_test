@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/flutter_app.dart';
+import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/WebSQLRouter.dart';
 import 'package:web_sqlite_test/router/RouterConstants.dart';
 import 'package:web_sqlite_test/router/RouterManager.dart';
@@ -35,7 +36,8 @@ class DBLanConnectDialog extends StatefulWidget {
   }
 }
 
-class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
+class _DBLanConnectDialogState extends State<DBLanConnectDialog>
+    with OnLanServiceCallback {
   final ValueNotifier<int> _currentSelectHost = ValueNotifier(0);
   final List<HostInfo> _hostInfoList = [];
   OnLanBroadcastCallback? _broadcastCallback;
@@ -43,6 +45,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
   @override
   void initState() {
     super.initState();
+    LanConnectService.getInstance().addServiceCallback(this);
     _broadcastCallback = (result) {
       WebSQLRouter? webSQLRouter = RouterManager.parseToWebSQLRouter(result);
       if (webSQLRouter != null &&
@@ -81,6 +84,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
 
   @override
   void dispose() {
+    LanConnectService.getInstance().removeServiceCallback(this);
     LanBroadcastService.getInstance()
         .removeBroadcastCallback(_broadcastCallback);
     super.dispose();
@@ -243,21 +247,29 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog> {
               return;
             }
             AppLoading.show();
-            LanConnectService.getInstance().connectService(hostInfo,
-                (connectState) {
-              AppLoading.hide();
-              if (connectState
-                      .compareTo(LanConnectService.connectStateSuccess) ==
-                  0) {
-                widget.onSelectHostCallback(hostInfo);
-                widget.hide();
-              } else {
-                AppToast.show(connectState);
-              }
-            });
+            LanConnectService.getInstance().connectService(hostInfo);
           },
         ))
       ],
     );
   }
+
+  @override
+  onConnectState(String connectState) {
+    int index = _currentSelectHost.value;
+    HostInfo hostInfo = _hostInfoList[index];
+    AppLoading.hide();
+    if (connectState.compareTo(LanConnectService.connectStateSuccess) == 0) {
+      widget.onSelectHostCallback(hostInfo);
+      widget.hide();
+    } else {
+      AppToast.show(connectState);
+    }
+  }
+
+  @override
+  onExecSQLResult(String result) {}
+
+  @override
+  onListDBFile(List<DBFileInfo> dbFileList) {}
 }
