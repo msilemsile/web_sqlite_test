@@ -66,8 +66,9 @@ class LanBroadcastService {
   Future<void> sendBroadcast(String wifiIP, int port, String message) async {
     Log.message("LanBroadcastService sendMessage : $message");
     var msgInts = Uint8List.fromList(message.codeUnits);
-    RawDatagramSocket sendSocket =
-        await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+    RawDatagramSocket sendSocket = await RawDatagramSocket.bind(
+        InternetAddress.anyIPv4, 0,
+        reusePort: true);
     sendSocket.send(msgInts, InternetAddress(wifiIP), port);
     sendSocket.close();
   }

@@ -4,6 +4,7 @@ import 'package:web_sqlite_test/page/BrowserPage.dart';
 import 'package:web_sqlite_test/page/DatabasePage.dart';
 import 'package:web_sqlite_test/page/SettingPage.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
+import 'package:web_sqlite_test/utils/AppHelper.dart';
 
 import '../service/LanBroadcastService.dart';
 import '../service/LanConnectService.dart';
@@ -46,9 +47,7 @@ class _HomePageState extends State<HomePage>
         }
         canGoBack??=true;
         if(canGoBack){
-          LanBroadcastService.getInstance()
-              .stopBroadcast();
-          LanConnectService.getInstance().destroy();
+          AppHelper.releaseResource();
         }
         return canGoBack;
       },

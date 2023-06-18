@@ -11,7 +11,6 @@ import '../model/WebSQLRouter.dart';
 import '../router/RouterManager.dart';
 import '../utils/HostHelper.dart';
 
-typedef OnLanConnectCallback = Function(WebSQLRouter webSQLRouter);
 typedef OnConnectStateCallback = Function(String state);
 
 class LanConnectService {
@@ -29,7 +28,7 @@ class LanConnectService {
     return _lanConnectService!;
   }
 
-  final Set<OnLanConnectCallback> _callbackList = {};
+  final Set<OnSendWebRouterMessageCallback> _sendWebRouterMsgCallback = {};
   RawSocket? _clientSocket;
   RawServerSocket? _serverSocket;
   HostInfo? _connectHostInfo;
@@ -64,7 +63,7 @@ class LanConnectService {
       Log.message(
           "LanConnectService connectService RawSocket.connect error: $error");
     });
-    _listenConnect(null);
+    _listenConnect();
     return this;
   }
 
@@ -89,15 +88,12 @@ class LanConnectService {
       }
       _clientSocket = rawSocket;
       sendMessage(RouterConstants.buildSocketConnectRoute(wifiIP, 1));
-      _listenConnect(null);
+      _listenConnect();
     });
     return this;
   }
 
-  void _listenConnect(OnLanConnectCallback? callback) {
-    if (callback != null) {
-      _callbackList.add(callback);
-    }
+  void _listenConnect() {
     _clientSocket?.listen((socketEvent) {
       Log.message(
           "LanConnectService listenBroadcast _clientSocket socketEvent:  $socketEvent");
@@ -140,9 +136,11 @@ class LanConnectService {
                     .compareTo(RouterConstants.actionUnConnect) ==
                 0) {
               AppToast.show("与主机:$host断开");
-            }
-            for (OnLanConnectCallback callback in _callbackList) {
-              callback(webSQLRouter);
+            } else {
+              for (OnSendWebRouterMessageCallback webRouterMsgCallback
+                  in _sendWebRouterMsgCallback) {
+                webRouterMsgCallback.onMessageCallback(webSQLRouter);
+              }
             }
           }
         }
@@ -160,12 +158,16 @@ class LanConnectService {
     return _connectHostInfo != null;
   }
 
-  void addConnectCallback(OnLanConnectCallback callback) {
-    _callbackList.add(callback);
+  HostInfo? getCurrentConnectHostInfo() {
+    return _connectHostInfo;
   }
 
-  void removeConnectCallback(OnLanConnectCallback? callback) {
-    _callbackList.remove(callback);
+  void addSendMessageCallback(OnSendWebRouterMessageCallback callback) {
+    _sendWebRouterMsgCallback.add(callback);
+  }
+
+  void removeSendMessageCallback(OnSendWebRouterMessageCallback? callback) {
+    _sendWebRouterMsgCallback.remove(callback);
   }
 
   void unbindService() {
@@ -182,7 +184,7 @@ class LanConnectService {
     cancelConnectTimeoutTimer();
     _connectHostInfo = null;
     _connectStateCallback = null;
-    _callbackList.clear();
+    _sendWebRouterMsgCallback.clear();
     _clientSocket?.close();
     _clientSocket = null;
     Log.message("LanConnectService unConnectService over");
@@ -192,4 +194,8 @@ class LanConnectService {
     unbindService();
     unConnectService();
   }
+}
+
+mixin OnSendWebRouterMessageCallback {
+  onMessageCallback(WebSQLRouter webSQLRouter);
 }

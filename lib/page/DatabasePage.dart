@@ -36,7 +36,8 @@ class _DatabasePageState extends State<DatabasePage>
   final PopupWindow _moreActionWindow = PopupWindow();
 
   final ValueNotifier<DBDirConst> _currentWorkspace =
-  ValueNotifier(DBDirConst.local);
+      ValueNotifier(DBDirConst.local);
+  final ValueNotifier<HostInfo?> _currentHostInfo = ValueNotifier(null);
 
   GlobalKey<LiquidPullToRefreshState> pullToRefreshState = GlobalKey();
 
@@ -150,8 +151,7 @@ class _DatabasePageState extends State<DatabasePage>
                       GestureDetector(
                         onTap: () {
                           AppAlertDialog.builder()
-                              .setTitle(
-                              "确定删除${dbFileInfo.dbFileName}数据库吗?")
+                              .setTitle("确定删除${dbFileInfo.dbFileName}数据库吗?")
                               .setCancelTxt("取消")
                               .setConfirmCallback((_) async {
                             await DBWorkspaceManager.getInstance()
@@ -218,16 +218,24 @@ class _DatabasePageState extends State<DatabasePage>
                 valueListenable: _currentWorkspace,
                 builder: (buildContext, currentWorkspace, child) {
                   return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         DBConstants.getDBDirTitle(currentWorkspace),
                         style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xff1E90FF)),
-                      )
+                            color: AppColors.mainColor),
+                      ),
+                      Visibility(
+                          visible: _currentHostInfo.value != null,
+                          child: Text(
+                            "主机:${_currentHostInfo.value?.host}",
+                            style: const TextStyle(
+                                color: AppColors.redColor, fontSize: 13),
+                          ))
                     ],
-                  )
+                  );
                 }),
           ),
           GestureDetector(
@@ -346,10 +354,9 @@ class _DatabasePageState extends State<DatabasePage>
             SpaceWidget.createWidthSpace(5),
             Expanded(
                 child: Text(
-                  getMoreActionTitle(moreAction),
-                  style: const TextStyle(
-                      fontSize: 13, color: Color(0xff1E90FF)),
-                ))
+              getMoreActionTitle(moreAction),
+              style: const TextStyle(fontSize: 13, color: Color(0xff1E90FF)),
+            ))
           ],
         ),
       ),
@@ -387,11 +394,14 @@ class _DatabasePageState extends State<DatabasePage>
     if (moreAction == exchangeWorkspaceAction) {
       DBWorkspaceDialog(
         changeWorkspaceCallback: (DBDirConst dbDirConst, [HostInfo? hostInfo]) {
+          _currentWorkspace.value = dbDirConst;
+          _currentHostInfo.value = hostInfo;
           DBWorkspaceManager.getInstance().setCurrentDBDir(dbDirConst);
-        },).show(context);
+        },
+      ).show(context);
     } else if (moreAction == exeSqlAction) {
       DBFileInfo? lastConnectDBFile =
-      DBWorkspaceManager.getInstance().getLastConnectDBFile();
+          DBWorkspaceManager.getInstance().getLastConnectDBFile();
       if (lastConnectDBFile == null) {
         AppToast.show("暂无数据");
       } else {
@@ -412,9 +422,8 @@ class _DatabasePageState extends State<DatabasePage>
         if (dbName.isEmpty) {
           AppToast.show("数据库名称不能为空");
         } else {
-          sql3.Database? database =
-          await DBWorkspaceManager.getInstance().openOrCreateWorkspaceDB(
-              dbName);
+          sql3.Database? database = await DBWorkspaceManager.getInstance()
+              .openOrCreateWorkspaceDB(dbName);
           database?.dispose();
           setState(() {});
         }
@@ -432,17 +441,17 @@ class _DatabasePageState extends State<DatabasePage>
           children: [
             Expanded(
                 child: Material(
-                  color: Colors.transparent,
-                  child: TextField(
-                    controller: editingController,
-                    autofocus: true,
-                    decoration: const InputDecoration(
-                        hintText: "输入数据库名称", border: InputBorder.none),
-                    keyboardType: TextInputType.url,
-                    cursorColor: const Color(0xff1E90FF),
-                    style: const TextStyle(color: Color(0xff1E90FF)),
-                  ),
-                )),
+              color: Colors.transparent,
+              child: TextField(
+                controller: editingController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                    hintText: "输入数据库名称", border: InputBorder.none),
+                keyboardType: TextInputType.url,
+                cursorColor: const Color(0xff1E90FF),
+                style: const TextStyle(color: Color(0xff1E90FF)),
+              ),
+            )),
             const Text(".db", style: TextStyle(fontSize: 15))
           ],
         ),
@@ -455,5 +464,4 @@ class _DatabasePageState extends State<DatabasePage>
   Future<bool> canGoBack() {
     return Future.value(true);
   }
-
 }
