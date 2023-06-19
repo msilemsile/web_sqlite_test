@@ -6,21 +6,21 @@ import 'dart:typed_data';
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:flutter_app/common/widget/AppToast.dart';
 import 'package:sqlite3/sqlite3.dart';
+import 'package:web_sqlite_test/database/DBDirConst.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/router/RouterConstants.dart';
+import 'package:web_sqlite_test/router/WebSQLRouterCallback.dart';
+import 'package:web_sqlite_test/service/OnLanConnectCallback.dart';
 
 import '../model/WebSQLRouter.dart';
 import '../router/RouterManager.dart';
 import '../utils/HostHelper.dart';
 
-typedef OnConnectStateCallback = Function(String state);
-typedef OnWebRouterListDBCallback = Function(List<DBFileInfo> dbFileList);
-typedef OnWebRouterExeSQLCallback = Function(String reslut);
-
 class LanConnectService {
   static const int connectListenPort = 9494;
+  static const String connectStateStart = "开始连接";
   static const String connectStateSuccess = "连接成功";
   static const String connectStateTimeout = "连接超时";
   static const String connectStateError = "连接失败";
@@ -37,7 +37,8 @@ class LanConnectService {
   RawSocket? _clientSocket;
   RawServerSocket? _serverSocket;
   HostInfo? _connectHostInfo;
-  Set<OnLanServiceCallback> _serviceCallbackSet = Set<OnLanServiceCallback>();
+  final Set<OnLanConnectCallback> _onLanConnectSet = {};
+  final Set<WebSQLRouterCallback> _webSQLCallbackSet = {};
   Timer? _connectTimeoutTimer;
 
   Future<LanConnectService> connectService(HostInfo hostInfo) async {
@@ -47,20 +48,31 @@ class LanConnectService {
       AppToast.show("获取ip失败,请检查网络连接");
       return this;
     }
+    if (_connectHostInfo != null &&
+        _connectHostInfo!.host.compareTo(hostInfo.host) == 0) {
+      AppToast.show("当前已于主机:${hostInfo.host}连接");
+      for (OnLanConnectCallback callback in _onLanConnectSet) {
+        callback.onConnectState(connectStateSuccess);
+      }
+      return this;
+    }
     if (_clientSocket != null) {
       sendMessage(RouterConstants.buildSocketUnConnectRoute(wifiIP));
       unConnectService();
     }
     _connectTimeoutTimer = Timer(const Duration(seconds: 3), () {
-      for (OnLanServiceCallback serviceCallback in _serviceCallbackSet) {
-        serviceCallback.onConnectState(connectStateTimeout);
+      for (OnLanConnectCallback callback in _onLanConnectSet) {
+        callback.onConnectState(connectStateTimeout);
       }
       unConnectService();
     });
+    for (OnLanConnectCallback callback in _onLanConnectSet) {
+      callback.onConnectState(connectStateStart);
+    }
     _clientSocket = await RawSocket.connect(hostInfo.host, connectListenPort)
         .catchError((error) {
-      for (OnLanServiceCallback serviceCallback in _serviceCallbackSet) {
-        serviceCallback.onConnectState(connectStateError);
+      for (OnLanConnectCallback callback in _onLanConnectSet) {
+        callback.onConnectState(connectStateError);
       }
       unConnectService();
       Log.message(
@@ -110,6 +122,12 @@ class LanConnectService {
               RouterManager.parseToWebSQLRouter(dataReceive);
           if (webSQLRouter != null && webSQLRouter.action != null) {
             Map<String, dynamic>? jsonData = webSQLRouter.jsonData;
+            String? routerId;
+            if (jsonData != null) {
+              routerId = jsonData[RouterConstants.dataRouterId];
+            }
+            Log.message(
+                "_listenConnect routerId: $routerId action: ${webSQLRouter.action}");
             if (webSQLRouter.action!.compareTo(RouterConstants.actionConnect) ==
                 0) {
               String? host;
@@ -123,8 +141,8 @@ class LanConnectService {
               if (host != null && platform != null) {
                 cancelConnectTimeoutTimer();
                 _connectHostInfo = HostInfo(host, platform);
-                for (OnLanServiceCallback serviceCallback in _serviceCallbackSet) {
-                  serviceCallback.onConnectState(connectStateSuccess);
+                for (OnLanConnectCallback callback in _onLanConnectSet) {
+                  callback.onConnectState(connectStateSuccess);
                 }
                 AppToast.show("与主机:$host建立了连接");
                 if (shakeHands != null && shakeHands.compareTo("1") == 0) {
@@ -145,11 +163,11 @@ class LanConnectService {
               AppToast.show("与主机:$host断开");
             } else if (webSQLRouter.action!.compareTo(RouterConstants.actionListDB) ==
                 0) {
-              DBWorkspaceManager.getInstance()
-                  .listWorkspaceDBFile()
-                  .then((dbFileList) {
-                sendMessage(RouterConstants.buildListDBResultRoute(dbFileList));
-              });
+              DBWorkspaceManager.getInstance().listWorkspaceDBFile(
+                  (dbFileList) {
+                sendMessage(RouterConstants.buildListDBResultRoute(
+                    dbFileList, routerId));
+              }, DBDirConst.local);
             } else if (webSQLRouter.action!
                     .compareTo(RouterConstants.actionListDBResult) ==
                 0) {
@@ -157,11 +175,15 @@ class LanConnectService {
               if (jsonData != null) {
                 String? dbFileListJson = jsonData[RouterConstants.dataResult];
                 if (dbFileListJson != null && dbFileListJson.isNotEmpty) {
-                  dbFileList = jsonDecode(dbFileListJson);
+                  List<dynamic> jsonList = jsonDecode(dbFileListJson);
+                  for (Map<String, dynamic> object in jsonList) {
+                    DBFileInfo dbFileInfo = DBFileInfo.fromJson(object);
+                    dbFileList.add(dbFileInfo);
+                  }
                 }
               }
-              for (OnLanServiceCallback serviceCallback in _serviceCallbackSet) {
-                serviceCallback.onListDBFile(dbFileList);
+              for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
+                callback.onListDBFile(dbFileList, routerId);
               }
             } else if (webSQLRouter.action!.compareTo(RouterConstants.actionCreateDB) ==
                 0) {
@@ -236,11 +258,10 @@ class LanConnectService {
                 String? dataSql = jsonData[RouterConstants.dataSQL];
                 if (databaseName != null && dataSql != null) {
                   DBWorkspaceManager.getInstance()
-                      .getDBCommandHelper(databaseName)
-                      .execSql(dataSql, [], (result) {
+                      .execSql(databaseName, dataSql, [], (result) {
                     sendMessage(RouterConstants.buildExecSQLResultRoute(
-                        databaseName, result));
-                  });
+                        databaseName, result, routerId));
+                  }, DBDirConst.local);
                 }
               }
             } else if (webSQLRouter.action!
@@ -250,8 +271,8 @@ class LanConnectService {
                 String? databaseName = jsonData[RouterConstants.dataDBName];
                 String? dataResult = jsonData[RouterConstants.dataResult];
                 if (databaseName != null && dataResult != null) {
-                  for (OnLanServiceCallback serviceCallback in _serviceCallbackSet) {
-                    serviceCallback.onExecSQLResult(dataResult);
+                  for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
+                    callback.onExecSQLResult(dataResult, routerId);
                   }
                 }
               }
@@ -286,18 +307,27 @@ class LanConnectService {
     _connectTimeoutTimer = null;
   }
 
-  void addServiceCallback(OnLanServiceCallback serviceCallback) {
-    _serviceCallbackSet.add(serviceCallback);
+  void addLanConnectCallback(OnLanConnectCallback callback) {
+    _onLanConnectSet.add(callback);
   }
 
-  void removeServiceCallback(OnLanServiceCallback? serviceCallback) {
-    _serviceCallbackSet.remove(serviceCallback);
+  void removeLanConnectCallback(OnLanConnectCallback? callback) {
+    _onLanConnectSet.remove(callback);
+  }
+
+  void addWebRouterCallback(WebSQLRouterCallback callback) {
+    _webSQLCallbackSet.add(callback);
+  }
+
+  void removeWebRouterCallback(WebSQLRouterCallback? callback) {
+    _webSQLCallbackSet.remove(callback);
   }
 
   void unConnectService() {
     cancelConnectTimeoutTimer();
     _connectHostInfo = null;
-    _serviceCallbackSet.clear();
+    _onLanConnectSet.clear();
+    _webSQLCallbackSet.clear();
     _clientSocket?.close();
     _clientSocket = null;
     Log.message("LanConnectService unConnectService over");
@@ -307,12 +337,4 @@ class LanConnectService {
     unbindService();
     unConnectService();
   }
-}
-
-mixin OnLanServiceCallback {
-  onConnectState(String connectState);
-
-  onListDBFile(List<DBFileInfo> dbFileList);
-
-  onExecSQLResult(String result);
 }

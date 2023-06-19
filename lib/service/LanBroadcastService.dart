@@ -35,7 +35,7 @@ class LanBroadcastService {
     Log.message("LanBroadcastService startBroadcast local wifiIP : $wifiIP");
     _multiCastSocket ??= await RawDatagramSocket.bind(
             InternetAddress.anyIPv4, connectListenPort,
-            reusePort: true)
+            reusePort: !Platform.isAndroid)
         .catchError((error) {
       Log.message(
           "LanBroadcastService startBroadcast _multiCastSocket bind error: $error");
@@ -50,27 +50,31 @@ class LanBroadcastService {
 
   void _periodicBroadcast(String localWifiIP) async {
     if (_stopPeriodicBroadcast) {
-      Log.message("LanBroadcastService _stopPeriodicBroadcast");
+      // Log.message("LanBroadcastService _stopPeriodicBroadcast");
       return;
     }
-    Log.message("LanBroadcastService _periodicBroadcast start");
+    // Log.message("LanBroadcastService _periodicBroadcast start");
     await sendBroadcast(multicastAddress, connectListenPort,
         RouterConstants.buildSocketBroadcastRoute(localWifiIP));
-    Log.message("LanBroadcastService _periodicBroadcast end");
+    // Log.message("LanBroadcastService _periodicBroadcast end");
     Timer(const Duration(seconds: 2), () {
       _periodicBroadcast(localWifiIP);
     });
-    Log.message("LanBroadcastService _periodicBroadcast delay 2s");
+    // Log.message("LanBroadcastService _periodicBroadcast delay 2s");
   }
 
   Future<void> sendBroadcast(String wifiIP, int port, String message) async {
-    Log.message("LanBroadcastService sendMessage : $message");
+    // Log.message("LanBroadcastService sendMessage : $message");
     var msgInts = Uint8List.fromList(message.codeUnits);
     RawDatagramSocket sendSocket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4, 0,
-        reusePort: true);
+        reusePort: !Platform.isAndroid);
     sendSocket.send(msgInts, InternetAddress(wifiIP), port);
     sendSocket.close();
+  }
+
+  bool isListeningBroadcast() {
+    return _multiCastSocket != null;
   }
 
   void listenBroadcast(OnLanBroadcastCallback? callback) async {
@@ -86,13 +90,13 @@ class LanBroadcastService {
     }
     _isListenBroadcast = true;
     _multiCastSocket?.listen((RawSocketEvent socketEvent) {
-      Log.message(
-          "LanBroadcastService listenBroadcast socketEvent:  $socketEvent");
+      // Log.message(
+      //     "LanBroadcastService listenBroadcast socketEvent:  $socketEvent");
       Datagram? datagram = _multiCastSocket?.receive();
       if (datagram != null) {
         String receiveData = String.fromCharCodes(datagram.data);
-        Log.message(
-            "LanBroadcastService listenBroadcast receiveData:  $receiveData");
+        // Log.message(
+        //     "LanBroadcastService listenBroadcast receiveData:  $receiveData");
         for (OnLanBroadcastCallback callback in _callbackList) {
           callback(receiveData);
         }

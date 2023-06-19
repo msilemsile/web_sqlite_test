@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/flutter_app.dart';
-import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/WebSQLRouter.dart';
 import 'package:web_sqlite_test/router/RouterConstants.dart';
 import 'package:web_sqlite_test/router/RouterManager.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
 import 'package:web_sqlite_test/service/LanConnectService.dart';
+import 'package:web_sqlite_test/service/OnLanConnectCallback.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 import 'package:web_sqlite_test/utils/HostHelper.dart';
 
@@ -37,7 +37,7 @@ class DBLanConnectDialog extends StatefulWidget {
 }
 
 class _DBLanConnectDialogState extends State<DBLanConnectDialog>
-    with OnLanServiceCallback {
+    with OnLanConnectCallback {
   final ValueNotifier<int> _currentSelectHost = ValueNotifier(0);
   final List<HostInfo> _hostInfoList = [];
   OnLanBroadcastCallback? _broadcastCallback;
@@ -45,7 +45,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog>
   @override
   void initState() {
     super.initState();
-    LanConnectService.getInstance().addServiceCallback(this);
+    LanConnectService.getInstance().addLanConnectCallback(this);
     _broadcastCallback = (result) {
       WebSQLRouter? webSQLRouter = RouterManager.parseToWebSQLRouter(result);
       if (webSQLRouter != null &&
@@ -84,7 +84,7 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog>
 
   @override
   void dispose() {
-    LanConnectService.getInstance().removeServiceCallback(this);
+    LanConnectService.getInstance().removeLanConnectCallback(this);
     LanBroadcastService.getInstance()
         .removeBroadcastCallback(_broadcastCallback);
     super.dispose();
@@ -258,18 +258,16 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog>
   onConnectState(String connectState) {
     int index = _currentSelectHost.value;
     HostInfo hostInfo = _hostInfoList[index];
-    AppLoading.hide();
     if (connectState.compareTo(LanConnectService.connectStateSuccess) == 0) {
+      AppLoading.hide();
       widget.onSelectHostCallback(hostInfo);
       widget.hide();
+    } else if (connectState.compareTo(LanConnectService.connectStateStart) ==
+        0) {
+      AppLoading.show();
     } else {
+      AppLoading.hide();
       AppToast.show(connectState);
     }
   }
-
-  @override
-  onExecSQLResult(String result) {}
-
-  @override
-  onListDBFile(List<DBFileInfo> dbFileList) {}
 }

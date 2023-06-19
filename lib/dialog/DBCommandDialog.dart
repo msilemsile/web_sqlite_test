@@ -29,15 +29,6 @@ class DBCommandDialog extends StatefulWidget {
 class _DBCommandDialogState extends State<DBCommandDialog> {
   TextEditingController editingController = TextEditingController();
 
-  DBCommandHelper? _dbCommandHelper;
-
-  @override
-  void initState() {
-    super.initState();
-    _dbCommandHelper =
-        DBWorkspaceManager.getInstance().getDBCommandHelper(widget.databaseName);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -121,7 +112,6 @@ class _DBCommandDialogState extends State<DBCommandDialog> {
             child: Text("断开"),
           ),
           onTap: () {
-            _dbCommandHelper?.disposeDatabase();
             widget.hide();
           },
         )),
@@ -152,7 +142,8 @@ class _DBCommandDialogState extends State<DBCommandDialog> {
               AppToast.show("sql命令不能为空");
               return;
             } else {
-              _dbCommandHelper?.execSql(sqlExec, const [], (execSqlResult) {
+              DBWorkspaceManager.getInstance().execSql(
+                  widget.databaseName, sqlExec, const [], (execSqlResult) {
                 DBCommandHelper.showExecSqlResult(context, execSqlResult);
               });
             }

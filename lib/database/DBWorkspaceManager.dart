@@ -3,6 +3,10 @@ import 'dart:io';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqlite3/src/ffi/api.dart';
+import 'package:web_sqlite_test/router/RouterConstants.dart';
+import 'package:web_sqlite_test/router/RouterManager.dart';
+import 'package:web_sqlite_test/router/WebSQLRouterCallback.dart';
+import 'package:web_sqlite_test/service/LanConnectService.dart';
 import 'package:web_sqlite_test/utils/StorageHelper.dart';
 
 import '../model/DBFileInfo.dart';
@@ -10,19 +14,33 @@ import 'DBCommandHelper.dart';
 import 'DBDirConst.dart';
 import 'DBFileHelper.dart';
 
-class DBWorkspaceManager {
+typedef OnWebSQLExecResultCallback = Function(String result);
+typedef OnWebSQLListDBCallback = Function(List<DBFileInfo> dbFileList);
+
+class DBWorkspaceManager with WebSQLRouterCallback {
   DBWorkspaceManager._();
+
+  final Map<String, OnWebSQLExecResultCallback> _execSQLCallbackMap = {};
+  final Map<String, OnWebSQLListDBCallback> _listDBCallbackMap = {};
 
   static DBWorkspaceManager? _dbWorkspaceManager;
 
   static DBWorkspaceManager getInstance() {
     _dbWorkspaceManager ??= DBWorkspaceManager._();
+    LanConnectService.getInstance().addWebRouterCallback(_dbWorkspaceManager!);
     return _dbWorkspaceManager!;
+  }
+
+  void release() {
+    _execSQLCallbackMap.clear();
+    _listDBCallbackMap.clear();
+    disposeAllDatabase();
+    LanConnectService.getInstance().removeWebRouterCallback(this);
   }
 
   final Map<String, DBCommandHelper> _dbCommandHelperMap = {};
 
-  DBCommandHelper getDBCommandHelper(String databaseName) {
+  DBCommandHelper _getDBCommandHelper(String databaseName) {
     DBCommandHelper? commandHelper = _dbCommandHelperMap[databaseName];
     if (commandHelper == null) {
       commandHelper = DBCommandHelper.builder(databaseName);
@@ -40,7 +58,6 @@ class DBWorkspaceManager {
 
   DBFileInfo? _lastConnectDBFile;
   DBDirConst _currentDBDir = DBDirConst.local;
-  final List<DBFileInfo> _currentDBFileList = [];
 
   void setCurrentDBDir(DBDirConst dbDirConst) {
     _currentDBDir = dbDirConst;
@@ -48,10 +65,6 @@ class DBWorkspaceManager {
 
   DBDirConst getCurrentDBDir() {
     return _currentDBDir;
-  }
-
-  List<DBFileInfo> getCurrentDBFileList() {
-    return _currentDBFileList;
   }
 
   void setLastConnectDBFile(DBFileInfo dbFileInfo) {
@@ -74,26 +87,79 @@ class DBWorkspaceManager {
     return DBFileHelper.deleteDatabase(databaseName);
   }
 
-  Future<List<DBFileInfo>> listWorkspaceDBFile() async {
-    String dbDirPath = await StorageHelper.getDatabaseDirPath();
-    Directory dbDir = Directory(dbDirPath);
+  void execSql(String databaseName, String sqlExec, List<dynamic>? parameters,
+      OnWebSQLExecResultCallback resultCallback,
+      [DBDirConst? dbDirConst]) {
+    dbDirConst ??= _currentDBDir;
+    if (dbDirConst == DBDirConst.lan) {
+      String routerId = RouterManager.buildTempRouterId();
+      _execSQLCallbackMap[routerId] = resultCallback;
+      LanConnectService.getInstance().sendMessage(
+          RouterConstants.buildExecSQLRoute(databaseName, sqlExec, routerId));
+    } else if (dbDirConst == DBDirConst.server) {
+      AppToast.show(sqlExec);
+    } else {
+      DBCommandHelper dbCommandHelper = _getDBCommandHelper(databaseName);
+      dbCommandHelper.execSql(sqlExec, parameters, (result) {
+        resultCallback(result);
+      });
+    }
+  }
+
+  void listWorkspaceDBFile(OnWebSQLListDBCallback onListDBCallback,
+      [DBDirConst? dbDirConst]) {
+    dbDirConst ??= _currentDBDir;
+    _lastConnectDBFile = null;
     List<DBFileInfo> dbFileInfoList = [];
-    List<FileSystemEntity> listFileSync = dbDir.listSync();
-    for (FileSystemEntity fileEntity in listFileSync) {
-      String filePath = fileEntity.path;
-      Log.message("application listWorkspaceDBFile : $filePath");
-      String fileExtension = path.extension(filePath);
-      String fileName = path.basenameWithoutExtension(filePath);
-      if (fileExtension.contains(".db")) {
-        dbFileInfoList.add(DBFileInfo(fileName, filePath));
+    if (dbDirConst == DBDirConst.lan) {
+      String routerId = RouterManager.buildTempRouterId();
+      _listDBCallbackMap[routerId] = onListDBCallback;
+      LanConnectService.getInstance()
+          .sendMessage(RouterConstants.buildListDBRoute(routerId));
+    } else if (dbDirConst == DBDirConst.server) {
+      onListDBCallback(dbFileInfoList);
+    } else {
+      StorageHelper.getDatabaseDirPath().then((dbDirPath) {
+        Directory dbDir = Directory(dbDirPath);
+        dbDir.list().listen((fileEntity) {
+          String filePath = fileEntity.path;
+          Log.message("application listWorkspaceDBFile : $filePath");
+          String fileExtension = path.extension(filePath);
+          String fileName = path.basenameWithoutExtension(filePath);
+          if (fileExtension.contains(".db")) {
+            dbFileInfoList.add(DBFileInfo(fileName, filePath));
+          }
+        }, onDone: () {
+          onListDBCallback(dbFileInfoList);
+        }, onError: (error) {
+          onListDBCallback(dbFileInfoList);
+        });
+      });
+    }
+  }
+
+  @override
+  onExecSQLResult(String result, [String? routerId]) {
+    Log.message("onExecSQLResult--routerId: $routerId || result: $result");
+    if (routerId != null) {
+      OnWebSQLExecResultCallback? execSQLCallback =
+          _execSQLCallbackMap[routerId];
+      if (execSQLCallback != null) {
+        execSQLCallback(result);
+        _execSQLCallbackMap.remove(routerId);
       }
     }
-    _currentDBFileList.clear();
-    _lastConnectDBFile = null;
-    _currentDBFileList.addAll(dbFileInfoList);
-    if (_currentDBFileList.isNotEmpty) {
-      _lastConnectDBFile = _currentDBFileList[0];
+  }
+
+  @override
+  onListDBFile(List<DBFileInfo> dbFileList, [String? routerId]) {
+    Log.message("onListDBFile--routerId: $routerId || dbFileList: $dbFileList");
+    if (routerId != null) {
+      OnWebSQLListDBCallback? listDBCallback = _listDBCallbackMap[routerId];
+      if (listDBCallback != null) {
+        listDBCallback(dbFileList);
+        _listDBCallbackMap.remove(routerId);
+      }
     }
-    return _currentDBFileList;
   }
 }

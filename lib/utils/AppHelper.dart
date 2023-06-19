@@ -5,11 +5,10 @@ import '../service/LanBroadcastService.dart';
 import '../service/LanConnectService.dart';
 
 abstract class AppHelper {
-
   static void releaseResource() {
+    HostHelper.getInstance().releaseLocalHostInfo();
+    DBWorkspaceManager.getInstance().release();
     LanConnectService.getInstance().destroy();
     LanBroadcastService.getInstance().stopBroadcast();
-    DBWorkspaceManager.getInstance().disposeAllDatabase();
-    HostHelper.getInstance().releaseLocalHostInfo();
   }
 }

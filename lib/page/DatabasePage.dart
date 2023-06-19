@@ -11,7 +11,6 @@ import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/EmptyDataList.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
-import 'package:web_sqlite_test/service/LanConnectService.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
 import '../database/DBDirConst.dart';
@@ -28,10 +27,7 @@ class DatabasePage extends StatefulWidget {
 }
 
 class _DatabasePageState extends State<DatabasePage>
-    with
-        AutomaticKeepAliveClientMixin,
-        HomeTabTapController,
-        OnLanServiceCallback {
+    with AutomaticKeepAliveClientMixin, HomeTabTapController {
   static const int exchangeWorkspaceAction = 0;
   static const int exeSqlAction = 1;
   static const int refreshDatabaseAction = 2;
@@ -50,9 +46,9 @@ class _DatabasePageState extends State<DatabasePage>
   @override
   void initState() {
     super.initState();
-    LanConnectService.getInstance().addServiceCallback(this);
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       widget.onTabPageCreateListener(this);
+      refreshListData();
     });
     _currentWorkspace.value =
         DBWorkspaceManager.getInstance().getCurrentDBDir();
@@ -60,7 +56,6 @@ class _DatabasePageState extends State<DatabasePage>
 
   @override
   void dispose() {
-    LanConnectService.getInstance().removeServiceCallback(this);
     super.dispose();
   }
 
@@ -75,7 +70,9 @@ class _DatabasePageState extends State<DatabasePage>
                 key: pullToRefreshState,
                 springAnimationDurationInMilliseconds: 400,
                 showChildOpacityTransition: false,
-                onRefresh: pullToOnRefresh,
+                onRefresh: () async {
+                  loadWorkspaceDBFile();
+                },
                 child: ValueListenableBuilder(
                     valueListenable: _currentDBFileList,
                     builder: (buildContext, dataList, child) {
@@ -158,7 +155,7 @@ class _DatabasePageState extends State<DatabasePage>
                               .setConfirmCallback((_) async {
                             await DBWorkspaceManager.getInstance()
                                 .deleteWorkspaceDB(dbFileInfo.dbFileName);
-                            setState(() {});
+                            refreshListData();
                           }).show(context);
                         },
                         child: const RectangleShape(
@@ -280,12 +277,20 @@ class _DatabasePageState extends State<DatabasePage>
     );
   }
 
-  Future<void> pullToOnRefresh() async {
+  void refreshListData() {
+    pullToRefreshState.currentState?.show();
     setState(() {});
   }
 
-  Future<List<DBFileInfo>> loadCurrentWorkspaceData() async {
-    return DBWorkspaceManager.getInstance().listWorkspaceDBFile();
+  void loadWorkspaceDBFile() async {
+    Log.message("DatabasePage--pullToOnRefresh");
+    DBWorkspaceManager.getInstance().listWorkspaceDBFile((dbFileList) {
+      if (dbFileList.isEmpty) {
+        _currentDBFileList.value = [EmptyDataList()];
+      } else {
+        _currentDBFileList.value = dbFileList;
+      }
+    });
   }
 
   @override
@@ -293,8 +298,7 @@ class _DatabasePageState extends State<DatabasePage>
 
   @override
   onTabDoubleTap() {
-    pullToRefreshState.currentState?.show();
-    setState(() {});
+    refreshListData();
   }
 
   @override
@@ -399,6 +403,7 @@ class _DatabasePageState extends State<DatabasePage>
           _currentWorkspace.value = dbDirConst;
           _currentHostInfo.value = hostInfo;
           DBWorkspaceManager.getInstance().setCurrentDBDir(dbDirConst);
+          refreshListData();
         },
       ).show(context);
     } else if (moreAction == exeSqlAction) {
@@ -411,8 +416,7 @@ class _DatabasePageState extends State<DatabasePage>
             .show(context);
       }
     } else if (moreAction == refreshDatabaseAction) {
-      pullToRefreshState.currentState?.show();
-      setState(() {});
+      refreshListData();
     } else if (moreAction == newDatabaseAction) {
       TextEditingController editingController = TextEditingController();
       AppAlertDialog.builder()
@@ -427,7 +431,7 @@ class _DatabasePageState extends State<DatabasePage>
           sql3.Database? database = await DBWorkspaceManager.getInstance()
               .openOrCreateWorkspaceDB(dbName);
           database?.dispose();
-          setState(() {});
+          refreshListData();
         }
       }).show(context);
     }
@@ -466,13 +470,4 @@ class _DatabasePageState extends State<DatabasePage>
   Future<bool> canGoBack() {
     return Future.value(true);
   }
-
-  @override
-  onConnectState(String connectState) {}
-
-  @override
-  onExecSQLResult(String result) {}
-
-  @override
-  onListDBFile(List<DBFileInfo> dbFileList) {}
 }

@@ -3,6 +3,7 @@ import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/dialog/DBLanConnectDialog.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
+import 'package:web_sqlite_test/service/LanBroadcastService.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
 import '../database/DBConstants.dart';
@@ -65,6 +66,7 @@ class _DBWorkspaceDialogState extends State<DBWorkspaceDialog> {
                 ),
               ),
               buildContentWidget(context),
+              SpaceWidget.createHeightSpace(12),
             ],
           ),
         ));
@@ -74,17 +76,25 @@ class _DBWorkspaceDialogState extends State<DBWorkspaceDialog> {
     return SizedBox(
       width: double.infinity,
       height: 160,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            buildWorkspaceItemWidget(DBDirConst.local),
-            SpaceWidget.createHeightSpace(1, spaceColor: AppColors.lineColor),
-            buildWorkspaceItemWidget(DBDirConst.lan),
-            SpaceWidget.createHeightSpace(1, spaceColor: AppColors.lineColor),
-            buildWorkspaceItemWidget(DBDirConst.server)
-          ],
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              buildWorkspaceItemWidget(DBDirConst.local),
+              SpaceWidget.createHeightSpace(1, spaceColor: AppColors.lineColor),
+              buildWorkspaceItemWidget(DBDirConst.lan),
+              SpaceWidget.createHeightSpace(1, spaceColor: AppColors.lineColor),
+              buildWorkspaceItemWidget(DBDirConst.server),
+              SpaceWidget.createHeightSpace(1, spaceColor: AppColors.lineColor),
+              buildWorkspaceItemWidget(DBDirConst.cacheLan),
+              SpaceWidget.createHeightSpace(1, spaceColor: AppColors.lineColor),
+              buildWorkspaceItemWidget(DBDirConst.cacheServer),
+              SpaceWidget.createHeightSpace(1, spaceColor: AppColors.lineColor),
+              buildWorkspaceItemWidget(DBDirConst.temp)
+            ],
+          ),
         ),
       ),
     );
@@ -95,19 +105,24 @@ class _DBWorkspaceDialogState extends State<DBWorkspaceDialog> {
       behavior: HitTestBehavior.opaque,
       onTap: () {
         var currentDBDir = DBWorkspaceManager.getInstance().getCurrentDBDir();
-        if (currentDBDir == dbDirConst) {
-          return;
+        if (dbDirConst != DBDirConst.lan && dbDirConst != DBDirConst.server) {
+          if (currentDBDir == dbDirConst) {
+            return;
+          }
         }
-        if (dbDirConst == DBDirConst.local) {
-          AppAlertDialog.builder()
-              .setTitle("切换到本地数据会断开所有连接，确定切换吗？")
-              .setCancelTxt("取消")
-              .setConfirmTxt("确定")
-              .setConfirmCallback((alertDialog) {
-            widget.changeWorkspaceCallback(dbDirConst);
-            widget.hide();
-          }).show(context);
+        if (dbDirConst == DBDirConst.local ||
+            dbDirConst == DBDirConst.cacheLan ||
+            dbDirConst == DBDirConst.cacheServer ||
+            dbDirConst == DBDirConst.temp) {
+          widget.changeWorkspaceCallback(dbDirConst);
+          widget.hide();
         } else if (dbDirConst == DBDirConst.lan) {
+          bool listeningBroadcast =
+              LanBroadcastService.getInstance().isListeningBroadcast();
+          if (!listeningBroadcast) {
+            AppToast.show("请在设置页打开局域网数据互操作");
+            return;
+          }
           DBLanConnectDialog(
             onSelectHostCallback: (selectHostInfo) {
               widget.changeWorkspaceCallback(dbDirConst, selectHostInfo);

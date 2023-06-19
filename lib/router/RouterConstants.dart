@@ -27,6 +27,7 @@ abstract class RouterConstants {
   static const String actionExecSQLResult = "execSQLResult";
 
   ///param data
+  static const String dataRouterId = "routerId";
   static const String dataHost = "host";
   static const String dataPlatform = "platform";
   static const String dataResult = "result";
@@ -58,16 +59,20 @@ abstract class RouterConstants {
     return webSQLRoute;
   }
 
-  static String buildListDBRoute() {
-    String webSQLRoute =
-        RouterManager.buildWebSQLRoute(RouterConstants.actionListDB);
+  static String buildListDBRoute([String? routerId]) {
+    routerId ??= "0";
+    String webSQLRoute = RouterManager.buildWebSQLRoute(
+        RouterConstants.actionListDB, {dataRouterId: routerId});
     return webSQLRoute;
   }
 
-  static String buildListDBResultRoute(List<DBFileInfo> dbFileList) {
+  static String buildListDBResultRoute(List<DBFileInfo> dbFileList,
+      [String? routerId]) {
+    routerId ??= "0";
     String dbFileListJson = jsonEncode(dbFileList).toString();
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionListDBResult, {dataResult: dbFileListJson});
+        RouterConstants.actionListDBResult,
+        {dataResult: dbFileListJson, dataRouterId: routerId});
     return webSQLRoute;
   }
 
@@ -97,16 +102,21 @@ abstract class RouterConstants {
     return webSQLRoute;
   }
 
-  static String buildExecSQLRoute(String dbName, String sql) {
+  static String buildExecSQLRoute(String dbName, String sql,
+      [String? routerId]) {
+    routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionExecSQL, {dataDBName: dbName, dataSQL: sql});
+        RouterConstants.actionExecSQL,
+        {dataDBName: dbName, dataSQL: sql, dataRouterId: routerId});
     return webSQLRoute;
   }
 
-  static String buildExecSQLResultRoute(String dbName, String result) {
+  static String buildExecSQLResultRoute(String dbName, String result,
+      [String? routerId]) {
+    routerId ??= "0";
     var webSQLRoute = RouterManager.buildWebSQLRoute(
         RouterConstants.actionExecSQLResult,
-        {dataDBName: dbName, dataResult: result});
+        {dataDBName: dbName, dataResult: result, dataRouterId: routerId});
     return webSQLRoute;
   }
 }
