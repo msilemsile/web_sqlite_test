@@ -8,6 +8,25 @@ import 'DBDirConst.dart';
 
 abstract class DBFileHelper {
 
+  static Future<bool> isDatabaseExist(String? databaseName,
+      [DBDirConst? dirConst]) async {
+    try {
+      if (databaseName == null || databaseName.isEmpty) {
+        return false;
+      }
+      if (!databaseName.endsWith(".db")) {
+        databaseName = "$databaseName.db";
+      }
+      String dbFilePath =
+      await StorageHelper.getDatabaseFilePath(databaseName, dirConst);
+      File dbFile = File(dbFilePath);
+      return dbFile.exists();
+    } catch (exception) {
+      Log.message("application create db error: $exception");
+    }
+    return false;
+  }
+
   static Future<Database?>? openDatabase(String? databaseName,
       [DBDirConst? dirConst]) async {
     try {

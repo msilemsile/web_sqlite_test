@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_app/flutter_app.dart';
 import 'package:path/path.dart' as path;
-import 'package:sqlite3/src/ffi/api.dart';
 import 'package:web_sqlite_test/router/RouterConstants.dart';
 import 'package:web_sqlite_test/router/RouterManager.dart';
 import 'package:web_sqlite_test/router/WebSQLRouterCallback.dart';
@@ -14,6 +13,8 @@ import 'DBCommandHelper.dart';
 import 'DBDirConst.dart';
 import 'DBFileHelper.dart';
 
+typedef OnOpenOrCreateDBCallback = Function(String result);
+typedef OnDeleteDBCallback = Function(String result);
 typedef OnWebSQLExecResultCallback = Function(String result);
 typedef OnWebSQLListDBCallback = Function(List<DBFileInfo> dbFileList);
 
@@ -32,6 +33,7 @@ class DBWorkspaceManager with WebSQLRouterCallback {
   }
 
   void release() {
+    _lastConnectDBFile = null;
     _execSQLCallbackMap.clear();
     _listDBCallbackMap.clear();
     disposeAllDatabase();
@@ -60,6 +62,10 @@ class DBWorkspaceManager with WebSQLRouterCallback {
   DBDirConst _currentDBDir = DBDirConst.local;
 
   void setCurrentDBDir(DBDirConst dbDirConst) {
+    if (_currentDBDir != dbDirConst) {
+      release();
+      LanConnectService.getInstance().addWebRouterCallback(this);
+    }
     _currentDBDir = dbDirConst;
   }
 
@@ -75,16 +81,49 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     return _lastConnectDBFile;
   }
 
-  Future<Database?>? openOrCreateWorkspaceDB(String databaseName) {
-    return DBFileHelper.openDatabase(databaseName);
+  void openOrCreateWorkspaceDB(
+      String databaseName, OnOpenOrCreateDBCallback createDBCallback,
+      [DBDirConst? dbDirConst]) {
+    dbDirConst ??= _currentDBDir;
+    if (dbDirConst == DBDirConst.lan) {
+      LanConnectService.getInstance()
+          .sendMessage(RouterConstants.buildCreateDBRoute(databaseName));
+    } else if (dbDirConst == DBDirConst.server) {
+      AppToast.show("新建数据库$databaseName");
+    } else {
+      DBFileHelper.openDatabase(databaseName, dbDirConst)?.then((value) {
+        if (value != null) {
+          value.dispose();
+          createDBCallback("1");
+        } else {
+          createDBCallback("0");
+        }
+      }).onError((error, stackTrace) {
+        createDBCallback("0");
+      });
+    }
   }
 
-  Future<void> deleteWorkspaceDB(String databaseName) {
-    DBCommandHelper? commandHelper = _dbCommandHelperMap[databaseName];
-    if (commandHelper != null) {
-      commandHelper.disposeDatabase();
+  void deleteWorkspaceDB(
+      String databaseName, OnDeleteDBCallback deleteDBCallback,
+      [DBDirConst? dbDirConst]) {
+    dbDirConst ??= _currentDBDir;
+    if (dbDirConst == DBDirConst.lan) {
+      LanConnectService.getInstance()
+          .sendMessage(RouterConstants.buildDeleteDBRoute(databaseName));
+    } else if (dbDirConst == DBDirConst.server) {
+      AppToast.show("删除数据库$databaseName");
+    } else {
+      DBCommandHelper? commandHelper = _dbCommandHelperMap[databaseName];
+      if (commandHelper != null) {
+        commandHelper.disposeDatabase();
+      }
+      DBFileHelper.deleteDatabase(databaseName, dbDirConst).then((value) {
+        deleteDBCallback("1");
+      }).onError((error, stackTrace) {
+        deleteDBCallback("0");
+      });
     }
-    return DBFileHelper.deleteDatabase(databaseName);
   }
 
   void execSql(String databaseName, String sqlExec, List<dynamic>? parameters,
@@ -99,9 +138,17 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     } else if (dbDirConst == DBDirConst.server) {
       AppToast.show(sqlExec);
     } else {
-      DBCommandHelper dbCommandHelper = _getDBCommandHelper(databaseName);
-      dbCommandHelper.execSql(sqlExec, parameters, (result) {
-        resultCallback(result);
+      DBFileHelper.isDatabaseExist(databaseName).then((exist) {
+        if (exist) {
+          DBCommandHelper dbCommandHelper = _getDBCommandHelper(databaseName);
+          dbCommandHelper.execSql(dbDirConst!, sqlExec, parameters, (result) {
+            resultCallback(result);
+          });
+        } else {
+          resultCallback("数据库不存在，请刷新数据!");
+        }
+      }).onError((error, stackTrace) {
+        resultCallback("数据库error");
       });
     }
   }

@@ -2,7 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:sqlite3/sqlite3.dart';
-import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
+import 'package:web_sqlite_test/database/DBDirConst.dart';
+import 'package:web_sqlite_test/database/DBFileHelper.dart';
 
 typedef OnExecSqlCallback = Function(String execSqlResult);
 
@@ -22,9 +23,9 @@ class DBCommandHelper {
     return _databaseName;
   }
 
-  Future<DBCommandHelper> execSql(String sql,
-      [List<dynamic>? parameters, OnExecSqlCallback? sqlCallback]) async{
-    _database ??= await DBWorkspaceManager.getInstance().openOrCreateWorkspaceDB(_databaseName);
+  Future<DBCommandHelper> execSql(DBDirConst dbDirConst, String sql,
+      [List<dynamic>? parameters, OnExecSqlCallback? sqlCallback]) async {
+    _database ??= await DBFileHelper.openDatabase(_databaseName, dbDirConst);
     try {
       parameters ??= const [];
       ResultSet? resultSet = _database?.select(sql, parameters);

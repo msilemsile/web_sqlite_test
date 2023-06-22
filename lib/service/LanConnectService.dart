@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:flutter_app/common/widget/AppToast.dart';
-import 'package:sqlite3/sqlite3.dart';
 import 'package:web_sqlite_test/database/DBDirConst.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/model/DBFileInfo.dart';
@@ -50,7 +49,7 @@ class LanConnectService {
     }
     if (_connectHostInfo != null &&
         _connectHostInfo!.host.compareTo(hostInfo.host) == 0) {
-      AppToast.show("当前已于主机:${hostInfo.host}连接");
+      AppToast.show("与主机:${hostInfo.host}建立了连接");
       for (OnLanConnectCallback callback in _onLanConnectSet) {
         callback.onConnectState(connectStateSuccess);
       }
@@ -190,23 +189,16 @@ class LanConnectService {
               if (jsonData != null) {
                 String? databaseName = jsonData[RouterConstants.dataDBName];
                 if (databaseName != null) {
-                  Future<Database?>? openOrCreateWorkspaceDB =
-                      DBWorkspaceManager.getInstance()
-                          .openOrCreateWorkspaceDB(databaseName);
-                  if (openOrCreateWorkspaceDB != null) {
-                    openOrCreateWorkspaceDB.then((value) {
-                      if (value != null) {
-                        sendMessage(RouterConstants.buildCreateDBResultRoute(
-                            databaseName, 1));
-                      } else {
-                        sendMessage(RouterConstants.buildCreateDBResultRoute(
-                            databaseName, 0));
-                      }
-                    });
-                  } else {
-                    sendMessage(RouterConstants.buildCreateDBResultRoute(
-                        databaseName, 0));
-                  }
+                  DBWorkspaceManager.getInstance()
+                      .openOrCreateWorkspaceDB(databaseName, (result) {
+                    if (result.compareTo("1") == 0) {
+                      sendMessage(RouterConstants.buildCreateDBResultRoute(
+                          databaseName, 1));
+                    } else {
+                      sendMessage(RouterConstants.buildCreateDBResultRoute(
+                          databaseName, 0));
+                    }
+                  }, DBDirConst.local);
                 }
               }
             } else if (webSQLRouter.action!
@@ -230,11 +222,15 @@ class LanConnectService {
                 String? databaseName = jsonData[RouterConstants.dataDBName];
                 if (databaseName != null) {
                   DBWorkspaceManager.getInstance()
-                      .deleteWorkspaceDB(databaseName)
-                      .then((value) {
-                    sendMessage(RouterConstants.buildDeleteDBResultRoute(
-                        databaseName, 1));
-                  });
+                      .deleteWorkspaceDB(databaseName, (result) {
+                    if (result.compareTo("1") == 0) {
+                      sendMessage(RouterConstants.buildDeleteDBResultRoute(
+                          databaseName, 1));
+                    } else {
+                      sendMessage(RouterConstants.buildDeleteDBResultRoute(
+                          databaseName, 0));
+                    }
+                  }, DBDirConst.local);
                 }
               }
             } else if (webSQLRouter.action!

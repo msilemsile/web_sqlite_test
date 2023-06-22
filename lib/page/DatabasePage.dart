@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
-import 'package:sqlite3/sqlite3.dart' as sql3;
 import 'package:web_sqlite_test/database/DBConstants.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/dialog/DBCommandDialog.dart';
@@ -152,10 +151,18 @@ class _DatabasePageState extends State<DatabasePage>
                           AppAlertDialog.builder()
                               .setTitle("确定删除${dbFileInfo.dbFileName}数据库吗?")
                               .setCancelTxt("取消")
-                              .setConfirmCallback((_) async {
-                            await DBWorkspaceManager.getInstance()
-                                .deleteWorkspaceDB(dbFileInfo.dbFileName);
-                            refreshListData();
+                              .setConfirmCallback((_) {
+                            DBWorkspaceManager.getInstance().deleteWorkspaceDB(
+                                dbFileInfo.dbFileName, (result) {
+                              if (result.compareTo("1") == 0) {
+                                AppToast.show(
+                                    "删除${dbFileInfo.dbFileName}数据库成功");
+                                refreshListData();
+                              } else {
+                                AppToast.show(
+                                    "删除${dbFileInfo.dbFileName}数据库失败!");
+                              }
+                            });
                           }).show(context);
                         },
                         child: const RectangleShape(
@@ -428,10 +435,15 @@ class _DatabasePageState extends State<DatabasePage>
         if (dbName.isEmpty) {
           AppToast.show("数据库名称不能为空");
         } else {
-          sql3.Database? database = await DBWorkspaceManager.getInstance()
-              .openOrCreateWorkspaceDB(dbName);
-          database?.dispose();
-          refreshListData();
+          DBWorkspaceManager.getInstance().openOrCreateWorkspaceDB(dbName,
+              (result) {
+            if (result.compareTo("1") == 0) {
+              AppToast.show("创建数据库$dbName成功");
+              refreshListData();
+            } else {
+              AppToast.show("创建数据库$dbName失败!");
+            }
+          });
         }
       }).show(context);
     }
