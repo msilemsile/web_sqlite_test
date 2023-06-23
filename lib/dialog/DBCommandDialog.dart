@@ -142,8 +142,9 @@ class _DBCommandDialogState extends State<DBCommandDialog> {
               AppToast.show("sql命令不能为空");
               return;
             } else {
-              DBWorkspaceManager.getInstance().execSql(
-                  widget.databaseName, sqlExec, const [], (execSqlResult) {
+              DBWorkspaceManager.getInstance()
+                  .execSql(widget.databaseName, false, sqlExec, const [],
+                      (execSqlResult) {
                 DBCommandHelper.showExecSqlResult(context, execSqlResult);
               });
             }

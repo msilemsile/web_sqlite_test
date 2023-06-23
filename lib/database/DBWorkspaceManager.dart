@@ -126,8 +126,8 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     }
   }
 
-  void execSql(String databaseName, String sqlExec, List<dynamic>? parameters,
-      OnWebSQLExecResultCallback resultCallback,
+  void execSql(String databaseName, bool autoCreateDB, String sqlExec,
+      List<dynamic>? parameters, OnWebSQLExecResultCallback resultCallback,
       [DBDirConst? dbDirConst]) {
     dbDirConst ??= _currentDBDir;
     if (dbDirConst == DBDirConst.lan) {
@@ -138,18 +138,25 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     } else if (dbDirConst == DBDirConst.server) {
       AppToast.show(sqlExec);
     } else {
-      DBFileHelper.isDatabaseExist(databaseName).then((exist) {
-        if (exist) {
-          DBCommandHelper dbCommandHelper = _getDBCommandHelper(databaseName);
-          dbCommandHelper.execSql(dbDirConst!, sqlExec, parameters, (result) {
-            resultCallback(result);
-          });
-        } else {
-          resultCallback("数据库不存在，请刷新数据!");
-        }
-      }).onError((error, stackTrace) {
-        resultCallback("数据库error");
-      });
+      if (autoCreateDB) {
+        DBCommandHelper dbCommandHelper = _getDBCommandHelper(databaseName);
+        dbCommandHelper.execSql(dbDirConst, sqlExec, parameters, (result) {
+          resultCallback(result);
+        });
+      } else {
+        DBFileHelper.isDatabaseExist(databaseName).then((exist) {
+          if (exist) {
+            DBCommandHelper dbCommandHelper = _getDBCommandHelper(databaseName);
+            dbCommandHelper.execSql(dbDirConst!, sqlExec, parameters, (result) {
+              resultCallback(result);
+            });
+          } else {
+            resultCallback("数据库不存在，请刷新数据!");
+          }
+        }).onError((error, stackTrace) {
+          resultCallback("数据库error");
+        });
+      }
     }
   }
 

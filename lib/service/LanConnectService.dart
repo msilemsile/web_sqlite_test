@@ -254,7 +254,7 @@ class LanConnectService {
                 String? dataSql = jsonData[RouterConstants.dataSQL];
                 if (databaseName != null && dataSql != null) {
                   DBWorkspaceManager.getInstance()
-                      .execSql(databaseName, dataSql, [], (result) {
+                      .execSql(databaseName, false, dataSql, [], (result) {
                     sendMessage(RouterConstants.buildExecSQLResultRoute(
                         databaseName, result, routerId));
                   }, DBDirConst.local);
