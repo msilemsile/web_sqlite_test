@@ -23,6 +23,7 @@ class LanConnectService {
   static const String connectStateSuccess = "连接成功";
   static const String connectStateTimeout = "连接超时";
   static const String connectStateError = "连接失败";
+  static const String connectStateDisconnect = "连接断开";
 
   LanConnectService._();
 
@@ -111,7 +112,15 @@ class LanConnectService {
     _clientSocket?.listen((socketEvent) {
       Log.message(
           "LanConnectService listenBroadcast _clientSocket socketEvent:  $socketEvent");
-      if (socketEvent == RawSocketEvent.read) {
+      if (socketEvent == RawSocketEvent.readClosed ||
+          socketEvent == RawSocketEvent.closed) {
+        String socketReason =
+            socketEvent == RawSocketEvent.readClosed ? "readClosed" : "closed";
+        if (_connectHostInfo != null) {
+          AppToast.show("与主机:${_connectHostInfo!.host}断开 $socketReason");
+        }
+        unConnectService();
+      } else if (socketEvent == RawSocketEvent.read) {
         Uint8List? uint8list = _clientSocket?.read(_clientSocket?.available());
         if (uint8list != null) {
           String dataReceive = String.fromCharCodes(uint8list);
@@ -193,10 +202,10 @@ class LanConnectService {
                       .openOrCreateWorkspaceDB(databaseName, (result) {
                     if (result.compareTo("1") == 0) {
                       sendMessage(RouterConstants.buildCreateDBResultRoute(
-                          databaseName, 1));
+                          databaseName, 1, routerId));
                     } else {
                       sendMessage(RouterConstants.buildCreateDBResultRoute(
-                          databaseName, 0));
+                          databaseName, 0, routerId));
                     }
                   }, DBDirConst.local);
                 }
@@ -214,6 +223,10 @@ class LanConnectService {
                     AppToast.show("创建$databaseName数据库失败!");
                   }
                 }
+                result ??= "0";
+                for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
+                  callback.onOpenOrCreateDB(result, routerId);
+                }
               }
             } else if (webSQLRouter.action!
                     .compareTo(RouterConstants.actionDeleteDB) ==
@@ -225,10 +238,10 @@ class LanConnectService {
                       .deleteWorkspaceDB(databaseName, (result) {
                     if (result.compareTo("1") == 0) {
                       sendMessage(RouterConstants.buildDeleteDBResultRoute(
-                          databaseName, 1));
+                          databaseName, 1, routerId));
                     } else {
                       sendMessage(RouterConstants.buildDeleteDBResultRoute(
-                          databaseName, 0));
+                          databaseName, 0, routerId));
                     }
                   }, DBDirConst.local);
                 }
@@ -246,6 +259,10 @@ class LanConnectService {
                     AppToast.show("删除$databaseName数据库失败!");
                   }
                 }
+                result ??= "0";
+                for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
+                  callback.onDeleteDB(result, routerId);
+                }
               }
             } else if (webSQLRouter.action!.compareTo(RouterConstants.actionExecSQL) ==
                 0) {
@@ -254,7 +271,7 @@ class LanConnectService {
                 String? dataSql = jsonData[RouterConstants.dataSQL];
                 if (databaseName != null && dataSql != null) {
                   DBWorkspaceManager.getInstance()
-                      .execSql(databaseName, false, dataSql, [], (result) {
+                      .execSql(databaseName, dataSql, [], (result) {
                     sendMessage(RouterConstants.buildExecSQLResultRoute(
                         databaseName, result, routerId));
                   }, DBDirConst.local);
@@ -320,6 +337,9 @@ class LanConnectService {
   }
 
   void unConnectService() {
+    for (OnLanConnectCallback callback in _onLanConnectSet) {
+      callback.onConnectState(connectStateDisconnect);
+    }
     cancelConnectTimeoutTimer();
     _connectHostInfo = null;
     _onLanConnectSet.clear();

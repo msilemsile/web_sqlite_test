@@ -23,6 +23,8 @@ class DBWorkspaceManager with WebSQLRouterCallback {
 
   final Map<String, OnWebSQLExecResultCallback> _execSQLCallbackMap = {};
   final Map<String, OnWebSQLListDBCallback> _listDBCallbackMap = {};
+  final Map<String, OnOpenOrCreateDBCallback> _openOrCreateDBCallbackMap = {};
+  final Map<String, OnDeleteDBCallback> _deleteDBCallbackMap = {};
 
   static DBWorkspaceManager? _dbWorkspaceManager;
 
@@ -86,8 +88,11 @@ class DBWorkspaceManager with WebSQLRouterCallback {
       [DBDirConst? dbDirConst]) {
     dbDirConst ??= _currentDBDir;
     if (dbDirConst == DBDirConst.lan) {
-      LanConnectService.getInstance()
-          .sendMessage(RouterConstants.buildCreateDBRoute(databaseName));
+      String routerId =
+          RouterManager.buildTempRouterId(RouterConstants.actionCreateDB);
+      _openOrCreateDBCallbackMap[routerId] = createDBCallback;
+      LanConnectService.getInstance().sendMessage(
+          RouterConstants.buildCreateDBRoute(databaseName, routerId));
     } else if (dbDirConst == DBDirConst.server) {
       AppToast.show("新建数据库$databaseName");
     } else {
@@ -109,8 +114,11 @@ class DBWorkspaceManager with WebSQLRouterCallback {
       [DBDirConst? dbDirConst]) {
     dbDirConst ??= _currentDBDir;
     if (dbDirConst == DBDirConst.lan) {
-      LanConnectService.getInstance()
-          .sendMessage(RouterConstants.buildDeleteDBRoute(databaseName));
+      String routerId =
+          RouterManager.buildTempRouterId(RouterConstants.actionDeleteDB);
+      _deleteDBCallbackMap[routerId] = deleteDBCallback;
+      LanConnectService.getInstance().sendMessage(
+          RouterConstants.buildDeleteDBRoute(databaseName, routerId));
     } else if (dbDirConst == DBDirConst.server) {
       AppToast.show("删除数据库$databaseName");
     } else {
@@ -126,8 +134,8 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     }
   }
 
-  void execSql(String databaseName, bool autoCreateDB, String sqlExec,
-      List<dynamic>? parameters, OnWebSQLExecResultCallback resultCallback,
+  void execSql(String databaseName, String sqlExec, List<dynamic>? parameters,
+      OnWebSQLExecResultCallback resultCallback,
       [DBDirConst? dbDirConst]) {
     dbDirConst ??= _currentDBDir;
     if (dbDirConst == DBDirConst.lan) {
@@ -138,25 +146,10 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     } else if (dbDirConst == DBDirConst.server) {
       AppToast.show(sqlExec);
     } else {
-      if (autoCreateDB) {
-        DBCommandHelper dbCommandHelper = _getDBCommandHelper(databaseName);
-        dbCommandHelper.execSql(dbDirConst, sqlExec, parameters, (result) {
-          resultCallback(result);
-        });
-      } else {
-        DBFileHelper.isDatabaseExist(databaseName).then((exist) {
-          if (exist) {
-            DBCommandHelper dbCommandHelper = _getDBCommandHelper(databaseName);
-            dbCommandHelper.execSql(dbDirConst!, sqlExec, parameters, (result) {
-              resultCallback(result);
-            });
-          } else {
-            resultCallback("数据库不存在，请刷新数据!");
-          }
-        }).onError((error, stackTrace) {
-          resultCallback("数据库error");
-        });
-      }
+      DBCommandHelper dbCommandHelper = _getDBCommandHelper(databaseName);
+      dbCommandHelper.execSql(dbDirConst, sqlExec, parameters, (result) {
+        resultCallback(result);
+      });
     }
   }
 
@@ -166,7 +159,8 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     _lastConnectDBFile = null;
     List<DBFileInfo> dbFileInfoList = [];
     if (dbDirConst == DBDirConst.lan) {
-      String routerId = RouterManager.buildTempRouterId();
+      String routerId =
+          RouterManager.buildTempRouterId(RouterConstants.actionListDB);
       _listDBCallbackMap[routerId] = onListDBCallback;
       LanConnectService.getInstance()
           .sendMessage(RouterConstants.buildListDBRoute(routerId));
@@ -213,6 +207,30 @@ class DBWorkspaceManager with WebSQLRouterCallback {
       if (listDBCallback != null) {
         listDBCallback(dbFileList);
         _listDBCallbackMap.remove(routerId);
+      }
+    }
+  }
+
+  @override
+  onDeleteDB(String result, [String? routerId]) {
+    Log.message("onDeleteDB--routerId: $routerId || result: $result");
+    if (routerId != null) {
+      OnOpenOrCreateDBCallback? callback = _deleteDBCallbackMap[routerId];
+      if (callback != null) {
+        callback(result);
+        _deleteDBCallbackMap.remove(routerId);
+      }
+    }
+  }
+
+  @override
+  onOpenOrCreateDB(String result, [String? routerId]) {
+    Log.message("onOpenOrCreateDB--routerId: $routerId || result: $result");
+    if (routerId != null) {
+      OnDeleteDBCallback? callback = _openOrCreateDBCallbackMap[routerId];
+      if (callback != null) {
+        callback(result);
+        _openOrCreateDBCallbackMap.remove(routerId);
       }
     }
   }

@@ -121,6 +121,7 @@ class _DBWorkspaceDialogState extends State<DBWorkspaceDialog> {
               LanBroadcastService.getInstance().isListeningBroadcast();
           if (!listeningBroadcast) {
             AppToast.show("请在设置页打开局域网数据互操作");
+            widget.hide();
             return;
           }
           DBLanConnectDialog(

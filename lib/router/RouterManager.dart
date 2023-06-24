@@ -56,7 +56,7 @@ class RouterManager {
           Log.message("WebSQLRouter route sqlParams parse error");
         }
         DBWorkspaceManager.getInstance()
-            .execSql(databaseName, true, sql, sqlParams, (result) {
+            .execSql(databaseName, sql, sqlParams, (result) {
           callback?.call(result, paramRouterId);
         });
         break;
@@ -98,8 +98,8 @@ class RouterManager {
     return WebSQLRouter(paramAction, jsonData, paramRouterId);
   }
 
-  static String buildTempRouterId() {
-    return "routerId${DateTime.now().millisecondsSinceEpoch}";
+  static String buildTempRouterId([String tag = "routerId"]) {
+    return "$tag:${DateTime.now().millisecondsSinceEpoch}";
   }
 }
 

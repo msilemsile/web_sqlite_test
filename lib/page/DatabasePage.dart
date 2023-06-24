@@ -10,6 +10,8 @@ import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/EmptyDataList.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
+import 'package:web_sqlite_test/service/LanConnectService.dart';
+import 'package:web_sqlite_test/service/OnLanConnectCallback.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
 import '../database/DBDirConst.dart';
@@ -26,7 +28,10 @@ class DatabasePage extends StatefulWidget {
 }
 
 class _DatabasePageState extends State<DatabasePage>
-    with AutomaticKeepAliveClientMixin, HomeTabTapController {
+    with
+        AutomaticKeepAliveClientMixin,
+        HomeTabTapController,
+        OnLanConnectCallback {
   static const int exchangeWorkspaceAction = 0;
   static const int exeSqlAction = 1;
   static const int refreshDatabaseAction = 2;
@@ -45,6 +50,7 @@ class _DatabasePageState extends State<DatabasePage>
   @override
   void initState() {
     super.initState();
+    LanConnectService.getInstance().addLanConnectCallback(this);
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       widget.onTabPageCreateListener(this);
       refreshListData();
@@ -55,6 +61,7 @@ class _DatabasePageState extends State<DatabasePage>
 
   @override
   void dispose() {
+    LanConnectService.getInstance().removeLanConnectCallback(this);
     super.dispose();
   }
 
@@ -407,20 +414,34 @@ class _DatabasePageState extends State<DatabasePage>
     if (moreAction == exchangeWorkspaceAction) {
       DBWorkspaceDialog(
         changeWorkspaceCallback: (DBDirConst dbDirConst, [HostInfo? hostInfo]) {
-          _currentWorkspace.value = dbDirConst;
-          _currentHostInfo.value = hostInfo;
-          DBWorkspaceManager.getInstance().setCurrentDBDir(dbDirConst);
-          refreshListData();
+          if (hostInfo != null && hostInfo.isLocalHost()) {
+            changDBLocalSpace();
+          } else {
+            _currentWorkspace.value = dbDirConst;
+            _currentHostInfo.value = hostInfo;
+            DBWorkspaceManager.getInstance().setCurrentDBDir(dbDirConst);
+            refreshListData();
+          }
         },
       ).show(context);
     } else if (moreAction == exeSqlAction) {
-      DBFileInfo? lastConnectDBFile =
-          DBWorkspaceManager.getInstance().getLastConnectDBFile();
-      if (lastConnectDBFile == null) {
+      List dbFileList = _currentDBFileList.value;
+      if (dbFileList.isEmpty) {
         AppToast.show("暂无数据");
       } else {
-        DBCommandDialog(databaseName: lastConnectDBFile.dbFileName)
-            .show(context);
+        dynamic firstDBFile = dbFileList[0];
+        if (firstDBFile is EmptyDataList) {
+          AppToast.show("暂无数据");
+        } else {
+          DBFileInfo? lastConnectDBFile =
+              DBWorkspaceManager.getInstance().getLastConnectDBFile();
+          if (lastConnectDBFile == null) {
+            lastConnectDBFile = firstDBFile;
+            DBWorkspaceManager.getInstance().setLastConnectDBFile(firstDBFile);
+          }
+          DBCommandDialog(databaseName: lastConnectDBFile!.dbFileName)
+              .show(context);
+        }
       }
     } else if (moreAction == refreshDatabaseAction) {
       refreshListData();
@@ -481,5 +502,22 @@ class _DatabasePageState extends State<DatabasePage>
   @override
   Future<bool> canGoBack() {
     return Future.value(true);
+  }
+
+  void changDBLocalSpace() {
+    AppToast.show("已切换到本地空间");
+    _currentWorkspace.value = DBDirConst.local;
+    _currentHostInfo.value = null;
+    DBWorkspaceManager.getInstance().setCurrentDBDir(DBDirConst.local);
+    refreshListData();
+  }
+
+  @override
+  onConnectState(String connectState) {
+    if (connectState == LanConnectService.connectStateDisconnect) {
+      if (_currentWorkspace.value == DBDirConst.lan) {
+        changDBLocalSpace();
+      }
+    }
   }
 }

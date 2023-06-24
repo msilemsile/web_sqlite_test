@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_app/common/widget/LoadingWidget.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/model/WebSQLRouter.dart';
 import 'package:web_sqlite_test/router/RouterConstants.dart';
@@ -138,11 +139,20 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog>
           padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
           itemBuilder: (buildContext, index) {
             if (index == _hostInfoList.length) {
-              return const SizedBox(
+              return SizedBox(
                 width: double.infinity,
                 height: 45,
-                child: Center(
-                  child: Text("扫描中..."),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("扫描中"),
+                    SpaceWidget.createWidthSpace(5),
+                    const LoadingWidget(
+                      width: 10,
+                      height: 10,
+                      strokeWidth: 2,
+                    )
+                  ],
                 ),
               );
             }
@@ -235,7 +245,6 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog>
             int index = _currentSelectHost.value;
             HostInfo hostInfo = _hostInfoList[index];
             if (hostInfo.isLocalHost()) {
-              AppToast.show("已切换到局域网的本地缓存空间");
               LanConnectService.getInstance().unConnectService();
               widget.onSelectHostCallback(hostInfo);
               widget.hide();
@@ -246,7 +255,6 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog>
               AppToast.show("获取ip失败,请检查网络连接");
               return;
             }
-            AppLoading.show();
             LanConnectService.getInstance().connectService(hostInfo);
           },
         ))

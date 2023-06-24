@@ -76,29 +76,43 @@ abstract class RouterConstants {
     return webSQLRoute;
   }
 
-  static String buildCreateDBRoute(String dbName) {
+  static String buildCreateDBRoute(String dbName, [String? routerId]) {
+    routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionCreateDB, {dataDBName: dbName});
+        RouterConstants.actionCreateDB,
+        {dataDBName: dbName, dataRouterId: routerId});
     return webSQLRoute;
   }
 
-  static String buildCreateDBResultRoute(String dbName, int result) {
+  static String buildCreateDBResultRoute(String dbName, int result,
+      [String? routerId]) {
+    routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionCreateDBResult,
-        {dataDBName: dbName, dataResult: result.toString()});
+        RouterConstants.actionCreateDBResult, {
+      dataDBName: dbName,
+      dataResult: result.toString(),
+      dataRouterId: routerId
+    });
     return webSQLRoute;
   }
 
-  static String buildDeleteDBRoute(String dbName) {
+  static String buildDeleteDBRoute(String dbName, [String? routerId]) {
+    routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionDeleteDB, {dataDBName: dbName});
+        RouterConstants.actionDeleteDB,
+        {dataDBName: dbName, dataRouterId: routerId});
     return webSQLRoute;
   }
 
-  static String buildDeleteDBResultRoute(String dbName, int result) {
+  static String buildDeleteDBResultRoute(String dbName, int result,
+      [String? routerId]) {
+    routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionDeleteDBResult,
-        {dataDBName: dbName, dataResult: result.toString()});
+        RouterConstants.actionDeleteDBResult, {
+      dataDBName: dbName,
+      dataResult: result.toString(),
+      dataRouterId: routerId
+    });
     return webSQLRoute;
   }
 
