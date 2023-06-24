@@ -98,7 +98,6 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     } else {
       DBFileHelper.openDatabase(databaseName, dbDirConst)?.then((value) {
         if (value != null) {
-          value.dispose();
           createDBCallback("1");
         } else {
           createDBCallback("0");

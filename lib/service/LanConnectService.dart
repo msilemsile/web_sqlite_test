@@ -48,16 +48,7 @@ class LanConnectService {
       AppToast.show("获取ip失败,请检查网络连接");
       return this;
     }
-    if (_connectHostInfo != null &&
-        _connectHostInfo!.host.compareTo(hostInfo.host) == 0) {
-      AppToast.show("与主机:${hostInfo.host}建立了连接");
-      for (OnLanConnectCallback callback in _onLanConnectSet) {
-        callback.onConnectState(connectStateSuccess);
-      }
-      return this;
-    }
     if (_clientSocket != null) {
-      sendMessage(RouterConstants.buildSocketUnConnectRoute(wifiIP));
       unConnectService();
     }
     _connectTimeoutTimer = Timer(const Duration(seconds: 3), () {
@@ -98,7 +89,6 @@ class LanConnectService {
     _serverSocket?.listen((rawSocket) {
       Log.message("LanConnectService bindService connect is coming");
       if (_clientSocket != null) {
-        sendMessage(RouterConstants.buildSocketUnConnectRoute(wifiIP));
         unConnectService();
       }
       _clientSocket = rawSocket;
@@ -116,10 +106,10 @@ class LanConnectService {
           socketEvent == RawSocketEvent.closed) {
         String socketReason =
             socketEvent == RawSocketEvent.readClosed ? "readClosed" : "closed";
-        if (_connectHostInfo != null) {
-          AppToast.show("与主机:${_connectHostInfo!.host}断开 $socketReason");
+        AppToast.show("与主机断开 $socketReason");
+        for (OnLanConnectCallback callback in _onLanConnectSet) {
+          callback.onConnectState(connectStateDisconnect);
         }
-        unConnectService();
       } else if (socketEvent == RawSocketEvent.read) {
         Uint8List? uint8list = _clientSocket?.read(_clientSocket?.available());
         if (uint8list != null) {
@@ -337,13 +327,8 @@ class LanConnectService {
   }
 
   void unConnectService() {
-    for (OnLanConnectCallback callback in _onLanConnectSet) {
-      callback.onConnectState(connectStateDisconnect);
-    }
     cancelConnectTimeoutTimer();
     _connectHostInfo = null;
-    _onLanConnectSet.clear();
-    _webSQLCallbackSet.clear();
     _clientSocket?.close();
     _clientSocket = null;
     Log.message("LanConnectService unConnectService over");
@@ -352,5 +337,7 @@ class LanConnectService {
   void destroy() {
     unbindService();
     unConnectService();
+    _onLanConnectSet.clear();
+    _webSQLCallbackSet.clear();
   }
 }
