@@ -23,3 +23,7 @@ android | ios | windows | macos(WebView暂不支持) | linux(WebView暂不支持
 ![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/database.png)
 
 ![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/setting.png)
+
+![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/broadcast.png)
+
+![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/command.png)
