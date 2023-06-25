@@ -449,6 +449,7 @@ class _DatabasePageState extends State<DatabasePage>
       TextEditingController editingController = TextEditingController();
       AppAlertDialog.builder()
           .setTitle("新建数据库")
+          .setNeedHandleKeyboard(true)
           .setContentWidget(buildCreateDBWidget(editingController))
           .setCancelTxt("取消")
           .setConfirmCallback((_) async {

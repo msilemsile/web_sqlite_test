@@ -18,3 +18,4 @@ export 'common/widget/PageLoading.dart';
 export 'common/widget/PopupWindow.dart';
 export 'common/widget/SpaceWidget.dart';
 export 'common/widget/AppToast.dart';
+export 'common/widget/KeyboardPaddingWidget.dart';

@@ -8,4 +8,9 @@ class DisplayUtils {
     return MediaQuery.of(context).padding.top;
   }
 
+
+  static double getViewInsetBottomHeight(BuildContext context){
+    return MediaQuery.of(context).viewInsets.bottom;
+  }
+
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_app/common/widget/AppDialog.dart';
+import 'package:flutter_app/common/widget/KeyboardPaddingWidget.dart';
 import 'package:flutter_app/common/widget/SpaceWidget.dart';
 import 'package:flutter_app/theme/res/ColorsRes.dart';
 
@@ -24,6 +25,7 @@ class AppAlertDialog {
   Widget? _contentWidget;
   bool _autoClickButtonDismiss = true;
   late BuildContext _buildContext;
+  bool _needHandleKeyboard = false;
 
   AppAlertDialog setTitle(String value) {
     _title = value;
@@ -85,6 +87,11 @@ class AppAlertDialog {
     return this;
   }
 
+  AppAlertDialog setNeedHandleKeyboard(bool value) {
+    _needHandleKeyboard = value;
+    return this;
+  }
+
   AppAlertDialog._();
 
   late AppDialog _appDialog;
@@ -106,7 +113,7 @@ class AppAlertDialog {
   }
 
   Widget buildAppAlertDialogWidget(BuildContext context) {
-    return Padding(
+    Widget child = Padding(
         padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
         child: RectangleShape(
           solidColor: ThemeProvider.getColor(context, ColorsKey.bgLightMode),
@@ -151,6 +158,7 @@ class AppAlertDialog {
             ],
           ),
         ));
+    return _needHandleKeyboard ? KeyboardPaddingWidget(child: child) : child;
   }
 
   Widget buildBottomWidget(BuildContext context) {

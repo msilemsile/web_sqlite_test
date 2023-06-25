@@ -33,32 +33,34 @@ class _DBCommandDialogState extends State<DBCommandDialog> {
   Widget build(BuildContext context) {
     return Padding(
         padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-        child: RectangleShape(
-          solidColor: AppColors.whiteColor,
-          stokeColor: AppColors.lineColor,
-          cornerAll: 10,
-          stokeWidth: 0.5,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SpaceWidget.createHeightSpace(12),
-              const Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  "SQL命令控制台",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        child: KeyboardPaddingWidget(
+          child: RectangleShape(
+            solidColor: AppColors.whiteColor,
+            stokeColor: AppColors.lineColor,
+            cornerAll: 10,
+            stokeWidth: 0.5,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SpaceWidget.createHeightSpace(12),
+                const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text(
+                    "SQL命令控制台",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-              buildContentWidget(context),
-              SpaceWidget.createHeightSpace(16),
-              SpaceWidget.createHeightSpace(0.5,
-                  spaceColor: AppColors.lineColor),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: buildBottomWidget(context),
-              )
-            ],
+                buildContentWidget(context),
+                SpaceWidget.createHeightSpace(16),
+                SpaceWidget.createHeightSpace(0.5,
+                    spaceColor: AppColors.lineColor),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: buildBottomWidget(context),
+                )
+              ],
+            ),
           ),
         ));
   }
