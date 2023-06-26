@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_app/common/log/Log.dart';
+import 'package:web_sqlite_test/database/DBDirConst.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/model/WebSQLRouter.dart';
 
@@ -20,11 +21,12 @@ class RouterManager {
       return;
     }
     Log.message("WebSQLRouter route parse url $webSQLRouter");
-    _handleRouteAction(webSQLRouter, callback);
+    handleRouteAction(webSQLRouter, callback);
   }
 
-  static void _handleRouteAction(
-      WebSQLRouter webSQLRouter, RouterCallback? callback) {
+  static void handleRouteAction(
+      WebSQLRouter webSQLRouter, RouterCallback? callback,
+      [DBDirConst? dbDirConst]) {
     String? paramAction = webSQLRouter.action;
     String? paramRouterId = webSQLRouter.routerId;
     Map<String, dynamic>? paramDataResult = webSQLRouter.jsonData;
@@ -35,6 +37,48 @@ class RouterManager {
     }
 
     switch (paramAction) {
+      case RouterConstants.actionListDB:
+        DBWorkspaceManager.getInstance().listWorkspaceDBFile((dbFileList) {
+          String dbFileListJson = jsonEncode(dbFileList).toString();
+          callback?.call(dbFileListJson);
+        }, dbDirConst);
+        break;
+      case RouterConstants.actionCreateDB:
+        if (paramDataResult == null) {
+          return;
+        }
+        String? databaseName = paramDataResult["databaseName"];
+        if (databaseName == null) {
+          callback?.call("databaseName is null", paramRouterId);
+          return;
+        }
+        DBWorkspaceManager.getInstance().openOrCreateWorkspaceDB(databaseName,
+            (result) {
+          if (result.compareTo("1") == 0) {
+            callback?.call("创建$databaseName数据库成功");
+          } else {
+            callback?.call("创建$databaseName数据库失败!");
+          }
+        }, dbDirConst);
+        break;
+      case RouterConstants.actionDeleteDB:
+        if (paramDataResult == null) {
+          return;
+        }
+        String? databaseName = paramDataResult["databaseName"];
+        if (databaseName == null) {
+          callback?.call("databaseName is null", paramRouterId);
+          return;
+        }
+        DBWorkspaceManager.getInstance().deleteWorkspaceDB(databaseName,
+            (result) {
+          if (result.compareTo("1") == 0) {
+            callback?.call("删除$databaseName数据库成功");
+          } else {
+            callback?.call("删除$databaseName数据库失败!");
+          }
+        }, dbDirConst);
+        break;
       case RouterConstants.actionExecSQL:
         if (paramDataResult == null) {
           return;
@@ -55,10 +99,10 @@ class RouterManager {
         } catch (error) {
           Log.message("WebSQLRouter route sqlParams parse error");
         }
-        DBWorkspaceManager.getInstance()
-            .execSql(databaseName, sql, sqlParams, (result) {
+        DBWorkspaceManager.getInstance().execSql(databaseName, sql, sqlParams,
+            (result) {
           callback?.call(result, paramRouterId);
-        });
+        }, dbDirConst);
         break;
     }
   }
@@ -88,6 +132,10 @@ class RouterManager {
       return null;
     }
     Map<String, String> parameters = webSQLUri.queryParameters;
+    return convertWebSQLRouter(parameters);
+  }
+
+  static WebSQLRouter? convertWebSQLRouter(Map<String, String> parameters) {
     String? paramAction = parameters[RouterConstants.constParamAction];
     String? paramData = parameters[RouterConstants.constParamData];
     Map<String, dynamic> jsonData = {};

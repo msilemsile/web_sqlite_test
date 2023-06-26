@@ -151,14 +151,6 @@ class LanConnectService {
                   }
                 }
               }
-            } else if (webSQLRouter.action!
-                    .compareTo(RouterConstants.actionUnConnect) ==
-                0) {
-              String? host;
-              if (jsonData != null) {
-                host = jsonData[RouterConstants.dataHost];
-              }
-              AppToast.show("与主机:$host断开");
             } else if (webSQLRouter.action!.compareTo(RouterConstants.actionListDB) ==
                 0) {
               DBWorkspaceManager.getInstance().listWorkspaceDBFile(

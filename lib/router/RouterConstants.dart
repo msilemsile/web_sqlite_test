@@ -15,7 +15,6 @@ abstract class RouterConstants {
 
   ///param action
   static const String actionConnect = "connect";
-  static const String actionUnConnect = "unConnect";
   static const String actionBroadcast = "broadcast";
   static const String actionListDB = "listDB";
   static const String actionListDBResult = "listDBResult";
@@ -49,13 +48,6 @@ abstract class RouterConstants {
       dataPlatform: Platform.operatingSystem,
       dataShakeHands: shakeHands.toString()
     });
-    return webSQLRoute;
-  }
-
-  static String buildSocketUnConnectRoute(String wifiIP) {
-    String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionUnConnect,
-        {dataHost: wifiIP, dataPlatform: Platform.operatingSystem});
     return webSQLRoute;
   }
 

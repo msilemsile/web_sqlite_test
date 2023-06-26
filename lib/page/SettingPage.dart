@@ -5,6 +5,7 @@ import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
 import 'package:web_sqlite_test/service/LanConnectService.dart';
+import 'package:web_sqlite_test/service/WebSQLHttpServer.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 import 'package:web_sqlite_test/utils/HostHelper.dart';
 
@@ -131,10 +132,21 @@ class _SettingPageState extends State<SettingPage>
                           color: Colors.transparent,
                           child: Switch(
                               value: controlValue,
-                              onChanged: (newValue) {
+                              onChanged: (newValue) async{
                                 _httpDBControl.value = newValue;
                                 if (newValue) {
-                                } else {}
+                                  HostInfo? hostInfo =
+                                  await HostHelper.getInstance()
+                                      .getLocalHostInfo();
+                                  if (hostInfo == null) {
+                                    AppToast.show("获取ip失败,请检查网络连接");
+                                    _httpDBControl.value = false;
+                                    return;
+                                  }
+                                  await WebSQLHttpServer.getInstance().startServer();
+                                } else {
+                                  WebSQLHttpServer.getInstance().destroy();
+                                }
                               }),
                         ),
                       ),

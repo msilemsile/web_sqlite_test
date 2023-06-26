@@ -12,7 +12,7 @@ android | ios | windows | macos(WebView暂不支持) | linux(WebView暂不支持
 
 3.局域网下sqlite互操作
 
-4.提供http协议下sqlite API(开发中...)
+4.提供http协议下sqlite API
 
 5.客户端和局域网或者服务端数据同步(设计中...)
 
