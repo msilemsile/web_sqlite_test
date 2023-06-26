@@ -4,6 +4,7 @@ import 'package:web_sqlite_test/utils/HostHelper.dart';
 
 import '../service/LanBroadcastService.dart';
 import '../service/LanConnectService.dart';
+import '../service/WebSQLHttpClient.dart';
 
 abstract class AppHelper {
   static void releaseResource() {
@@ -12,5 +13,6 @@ abstract class AppHelper {
     LanConnectService.getInstance().destroy();
     LanBroadcastService.getInstance().stopBroadcast();
     WebSQLHttpServer.getInstance().destroy();
+    WebSQLHttpClient.getInstance().destroy();
   }
 }

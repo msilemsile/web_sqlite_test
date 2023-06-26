@@ -8,6 +8,7 @@ import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
 import 'package:web_sqlite_test/service/LanConnectService.dart';
+import 'package:web_sqlite_test/service/WebSQLHttpClient.dart';
 import 'package:web_sqlite_test/service/WebSQLHttpServer.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 import 'package:web_sqlite_test/utils/HostHelper.dart';
@@ -138,7 +139,6 @@ class _SettingPageState extends State<SettingPage>
                               child: Switch(
                                   value: controlValue,
                                   onChanged: (newValue) async {
-                                    _httpDBControl.value = newValue;
                                     if (newValue) {
                                       HostInfo? hostInfo =
                                           await HostHelper.getInstance()
@@ -152,7 +152,9 @@ class _SettingPageState extends State<SettingPage>
                                           .startServer();
                                     } else {
                                       WebSQLHttpServer.getInstance().destroy();
+                                      WebSQLHttpClient.getInstance().destroy();
                                     }
+                                    _httpDBControl.value = newValue;
                                   }),
                             ),
                           ),
@@ -173,36 +175,37 @@ class _SettingPageState extends State<SettingPage>
                         child: Center(
                           child: RichText(
                               text: TextSpan(children: [
-                                const TextSpan(
-                                    text: "API请求地址: ",
-                                    style: TextStyle(color: AppColors.mainColor)),
-                                TextSpan(
-                                    text: WebSQLHttpServer.getInstance()
-                                        .getHttpServerPath(),
-                                    style: const TextStyle(
-                                        color: AppColors.redColor,
-                                        fontWeight: FontWeight.bold,
-                                        decoration: TextDecoration.underline),
-                                    recognizer: () {
-                                      TapGestureRecognizer tapGestureRecognizer =
+                            const TextSpan(
+                                text: "API请求地址: ",
+                                style: TextStyle(color: AppColors.mainColor)),
+                            TextSpan(
+                                text: WebSQLHttpServer.getInstance()
+                                    .getHttpServerPath(),
+                                style: const TextStyle(
+                                    color: AppColors.redColor,
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.underline),
+                                recognizer: () {
+                                  TapGestureRecognizer tapGestureRecognizer =
                                       TapGestureRecognizer();
-                                      tapGestureRecognizer.onTap = () {
-                                        String httpServerPath =
+                                  tapGestureRecognizer.onTap = () {
+                                    String httpServerPath =
                                         WebSQLHttpServer.getInstance()
                                             .getHttpServerPath();
-                                        Clipboard.setData(
-                                            ClipboardData(text: httpServerPath));
-                                        AppToast.show("请求链接已复制!");
-                                        launchUrl(Uri.parse(httpServerPath),
-                                            mode: LaunchMode.externalApplication)
-                                            .onError((error, stackTrace) {
-                                          Log.message("launchUrl--error:$error");
-                                          return true;
-                                        });
-                                      };
-                                      return tapGestureRecognizer;
-                                    }())
-                              ])),
+                                    Clipboard.setData(
+                                        ClipboardData(text: httpServerPath));
+                                    AppToast.show("请求链接已复制!");
+                                    launchUrl(Uri.parse(httpServerPath),
+                                            mode:
+                                                LaunchMode.externalApplication)
+                                        .onError((error, stackTrace) {
+                                      Log.message("launchUrl--error:$error");
+                                      return true;
+                                    });
+                                  };
+                                  return tapGestureRecognizer;
+                                }())
+                          ])),
                         ),
                       ))
                 ],
