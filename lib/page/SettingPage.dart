@@ -1,6 +1,9 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_app/flutter_app.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/page/HomePage.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
@@ -106,60 +109,105 @@ class _SettingPageState extends State<SettingPage>
         ValueListenableBuilder(
             valueListenable: _httpDBControl,
             builder: (context, controlValue, child) {
-              return SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: Stack(
-                  children: [
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
-                        child: Text(
-                          "http协议数据库操作",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: AppColors.mainColor),
+              return Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: Stack(
+                      children: [
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                            child: Text(
+                              "http协议数据库操作",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: AppColors.mainColor),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 0, 20, 0),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Switch(
-                              value: controlValue,
-                              onChanged: (newValue) async{
-                                _httpDBControl.value = newValue;
-                                if (newValue) {
-                                  HostInfo? hostInfo =
-                                  await HostHelper.getInstance()
-                                      .getLocalHostInfo();
-                                  if (hostInfo == null) {
-                                    AppToast.show("获取ip失败,请检查网络连接");
-                                    _httpDBControl.value = false;
-                                    return;
-                                  }
-                                  await WebSQLHttpServer.getInstance().startServer();
-                                } else {
-                                  WebSQLHttpServer.getInstance().destroy();
-                                }
-                              }),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(0, 0, 20, 0),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: Switch(
+                                  value: controlValue,
+                                  onChanged: (newValue) async {
+                                    _httpDBControl.value = newValue;
+                                    if (newValue) {
+                                      HostInfo? hostInfo =
+                                          await HostHelper.getInstance()
+                                              .getLocalHostInfo();
+                                      if (hostInfo == null) {
+                                        AppToast.show("获取ip失败,请检查网络连接");
+                                        _httpDBControl.value = false;
+                                        return;
+                                      }
+                                      await WebSQLHttpServer.getInstance()
+                                          .startServer();
+                                    } else {
+                                      WebSQLHttpServer.getInstance().destroy();
+                                    }
+                                  }),
+                            ),
+                          ),
                         ),
-                      ),
+                        Align(
+                          alignment: Alignment.bottomLeft,
+                          child: SpaceWidget.createHeightSpace(1,
+                              spaceColor: AppColors.lineColor),
+                        )
+                      ],
                     ),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: SpaceWidget.createHeightSpace(1,
-                          spaceColor: AppColors.lineColor),
-                    )
-                  ],
-                ),
+                  ),
+                  Visibility(
+                      visible: _httpDBControl.value,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 35,
+                        child: Center(
+                          child: RichText(
+                              text: TextSpan(children: [
+                                const TextSpan(
+                                    text: "API请求地址: ",
+                                    style: TextStyle(color: AppColors.mainColor)),
+                                TextSpan(
+                                    text: WebSQLHttpServer.getInstance()
+                                        .getHttpServerPath(),
+                                    style: const TextStyle(
+                                        color: AppColors.redColor,
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.underline),
+                                    recognizer: () {
+                                      TapGestureRecognizer tapGestureRecognizer =
+                                      TapGestureRecognizer();
+                                      tapGestureRecognizer.onTap = () {
+                                        String httpServerPath =
+                                        WebSQLHttpServer.getInstance()
+                                            .getHttpServerPath();
+                                        Clipboard.setData(
+                                            ClipboardData(text: httpServerPath));
+                                        AppToast.show("请求链接已复制!");
+                                        launchUrl(Uri.parse(httpServerPath),
+                                            mode: LaunchMode.externalApplication)
+                                            .onError((error, stackTrace) {
+                                          Log.message("launchUrl--error:$error");
+                                          return true;
+                                        });
+                                      };
+                                      return tapGestureRecognizer;
+                                    }())
+                              ])),
+                        ),
+                      ))
+                ],
               );
-            })
+            }),
       ],
     );
   }

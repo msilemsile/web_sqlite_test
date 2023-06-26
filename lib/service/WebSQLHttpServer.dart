@@ -56,8 +56,8 @@ class WebSQLHttpServer {
         HttpResponse httpResponse = httpRequest.response;
         String? serverPath = getHttpServerPath();
         if (serverPath != null) {
-          httpResponse
-              .writeln("仅支持WebSQL操作,API如下:(!!!ps:data块为json数据需要url encode)");
+          httpResponse.writeln(
+              "仅支持WebSQL操作,GET请求API如下:(!!!data块为json格式数据,需要url encode编码)");
           httpResponse.writeln("1.获取数据库列表:");
           httpResponse
               .writeln("$serverPath?action=${RouterConstants.actionListDB}");
@@ -79,8 +79,11 @@ class WebSQLHttpServer {
     return this;
   }
 
-  String? getHttpServerPath() {
-    return _httpServerPath;
+  String getHttpServerPath() {
+    if (_httpServerPath != null) {
+      return _httpServerPath!;
+    }
+    return "https://{主机IP}:$httpServerListenPort";
   }
 
   void destroy() {

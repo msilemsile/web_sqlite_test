@@ -51,6 +51,7 @@ dependencies:
   serverpod: ^1.1.1
   connectivity_plus: ^4.0.1
   network_info_plus: ^4.0.1
+  url_launcher: ^6.1.11
 
 dev_dependencies:
   flutter_test:
