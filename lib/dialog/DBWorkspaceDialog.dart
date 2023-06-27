@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_app/flutter_app.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/dialog/DBLanConnectDialog.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
+import 'package:web_sqlite_test/service/LanConnectService.dart';
+import 'package:web_sqlite_test/service/WebSQLHttpClient.dart';
+import 'package:web_sqlite_test/service/WebSQLHttpServer.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
 import '../database/DBConstants.dart';
@@ -131,7 +136,37 @@ class _DBWorkspaceDialogState extends State<DBWorkspaceDialog> {
             },
           ).show(context);
         } else if (dbDirConst == DBDirConst.server) {
-          AppToast.show("该功能开发中");
+          TextEditingController editingController = TextEditingController();
+          AppAlertDialog.builder()
+              .setTitle("数据库服务器")
+              .setNeedHandleKeyboard(true)
+              .setContentWidget(buildConnectServerWidget(editingController))
+              .setCancelTxt("取消")
+              .setConfirmTxt("连接")
+              .setConfirmCallback((_) async {
+            String serviceAddress = editingController.text.toString().trim();
+            if (serviceAddress.isEmpty) {
+              AppToast.show("服务器地址不能为空");
+            } else {
+              if (!serviceAddress.startsWith("http")) {
+                serviceAddress = "http://$serviceAddress";
+              }
+              try {
+                Uri uri = Uri.parse(serviceAddress);
+                if (uri.host.isEmpty) {
+                  AppToast.show("主机名不能为空");
+                } else {
+                  HostInfo hostInfo =
+                      HostInfo(uri.host, Platform.operatingSystem);
+                  WebSQLHttpClient.getInstance().connect(hostInfo);
+                  widget.changeWorkspaceCallback(dbDirConst, hostInfo);
+                  widget.hide();
+                }
+              } catch (error) {
+                AppToast.show("输入地址有误");
+              }
+            }
+          }).show(context);
         }
       },
       child: SizedBox(
@@ -165,5 +200,38 @@ class _DBWorkspaceDialogState extends State<DBWorkspaceDialog> {
         ),
       ),
     );
+  }
+
+  Widget buildConnectServerWidget(TextEditingController editingController) {
+    Widget editServiceAddressWidget = SizedBox(
+      width: double.infinity,
+      height: 45,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+        child: Row(
+          children: [
+            const Text("http://", style: TextStyle(fontSize: 15)),
+            SpaceWidget.createWidthSpace(5),
+            Expanded(
+                child: Material(
+              color: Colors.transparent,
+              child: TextField(
+                controller: editingController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                    hintText: "输入数据库服务器地址", border: InputBorder.none),
+                keyboardType: TextInputType.url,
+                cursorColor: const Color(0xff1E90FF),
+                style: const TextStyle(color: Color(0xff1E90FF)),
+              ),
+            )),
+            SpaceWidget.createWidthSpace(5),
+            const Text(":${WebSQLHttpServer.httpServerListenPort}",
+                style: TextStyle(fontSize: 15))
+          ],
+        ),
+      ),
+    );
+    return editServiceAddressWidget;
   }
 }

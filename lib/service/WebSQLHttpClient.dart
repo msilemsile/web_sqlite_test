@@ -26,6 +26,7 @@ class WebSQLHttpClient {
 
   void connect(HostInfo hostInfo) {
     _httpClient = HttpClient();
+    _httpClient?.connectionTimeout = const Duration(seconds: 5);
     _connectHostInfo = hostInfo;
     Log.message("WebSQLHttpClient connect hostInfo : $hostInfo");
   }
@@ -75,8 +76,8 @@ class WebSQLHttpClient {
         RouterConstants.actionExecSQL, originDataParams, routerId);
   }
 
-  void _getHttpWebSQLRequest(
-      String actionParams, Map<String, String>? dataParams, String routerId) {
+  void _getHttpWebSQLRequest(String actionParams,
+      Map<String, String>? dataParams, String routerId) async {
     if (_connectHostInfo == null) {
       AppToast.show("主机为空!");
       return;

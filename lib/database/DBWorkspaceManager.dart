@@ -6,6 +6,7 @@ import 'package:web_sqlite_test/router/RouterConstants.dart';
 import 'package:web_sqlite_test/router/RouterManager.dart';
 import 'package:web_sqlite_test/router/WebSQLRouterCallback.dart';
 import 'package:web_sqlite_test/service/LanConnectService.dart';
+import 'package:web_sqlite_test/service/WebSQLHttpClient.dart';
 import 'package:web_sqlite_test/utils/StorageHelper.dart';
 
 import '../model/DBFileInfo.dart';
@@ -31,6 +32,7 @@ class DBWorkspaceManager with WebSQLRouterCallback {
   static DBWorkspaceManager getInstance() {
     _dbWorkspaceManager ??= DBWorkspaceManager._();
     LanConnectService.getInstance().addWebRouterCallback(_dbWorkspaceManager!);
+    WebSQLHttpClient.getInstance().addWebRouterCallback(_dbWorkspaceManager!);
     return _dbWorkspaceManager!;
   }
 
@@ -40,6 +42,7 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     _listDBCallbackMap.clear();
     disposeAllDatabase();
     LanConnectService.getInstance().removeWebRouterCallback(this);
+    WebSQLHttpClient.getInstance().removeWebRouterCallback(this);
   }
 
   final Map<String, DBCommandHelper> _dbCommandHelperMap = {};
@@ -67,6 +70,7 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     if (_currentDBDir != dbDirConst) {
       release();
       LanConnectService.getInstance().addWebRouterCallback(this);
+      WebSQLHttpClient.getInstance().addWebRouterCallback(this);
     }
     _currentDBDir = dbDirConst;
   }
@@ -94,7 +98,9 @@ class DBWorkspaceManager with WebSQLRouterCallback {
       LanConnectService.getInstance().sendMessage(
           RouterConstants.buildCreateDBRoute(databaseName, routerId));
     } else if (dbDirConst == DBDirConst.server) {
-      AppToast.show("新建数据库$databaseName");
+      String routerId =
+          RouterManager.buildTempRouterId(RouterConstants.actionCreateDB);
+      WebSQLHttpClient.getInstance().openOrCreateDB(databaseName, routerId);
     } else {
       DBFileHelper.openDatabase(databaseName, dbDirConst)?.then((value) {
         if (value != null) {
@@ -119,7 +125,10 @@ class DBWorkspaceManager with WebSQLRouterCallback {
       LanConnectService.getInstance().sendMessage(
           RouterConstants.buildDeleteDBRoute(databaseName, routerId));
     } else if (dbDirConst == DBDirConst.server) {
-      AppToast.show("删除数据库$databaseName");
+      String routerId =
+          RouterManager.buildTempRouterId(RouterConstants.actionDeleteDB);
+      _deleteDBCallbackMap[routerId] = deleteDBCallback;
+      WebSQLHttpClient.getInstance().deleteDB(databaseName, routerId);
     } else {
       DBCommandHelper? commandHelper = _dbCommandHelperMap[databaseName];
       if (commandHelper != null) {
@@ -143,7 +152,9 @@ class DBWorkspaceManager with WebSQLRouterCallback {
       LanConnectService.getInstance().sendMessage(
           RouterConstants.buildExecSQLRoute(databaseName, sqlExec, routerId));
     } else if (dbDirConst == DBDirConst.server) {
-      AppToast.show(sqlExec);
+      String routerId = RouterManager.buildTempRouterId();
+      _execSQLCallbackMap[routerId] = resultCallback;
+      WebSQLHttpClient.getInstance().execSQL(databaseName, sqlExec, routerId);
     } else {
       DBCommandHelper dbCommandHelper = _getDBCommandHelper(databaseName);
       dbCommandHelper.execSql(dbDirConst, sqlExec, parameters, (result) {
@@ -164,7 +175,10 @@ class DBWorkspaceManager with WebSQLRouterCallback {
       LanConnectService.getInstance()
           .sendMessage(RouterConstants.buildListDBRoute(routerId));
     } else if (dbDirConst == DBDirConst.server) {
-      onListDBCallback(dbFileInfoList);
+      String routerId =
+          RouterManager.buildTempRouterId(RouterConstants.actionListDB);
+      _listDBCallbackMap[routerId] = onListDBCallback;
+      WebSQLHttpClient.getInstance().listDB(routerId);
     } else {
       StorageHelper.getDatabaseDirPath().then((dbDirPath) {
         Directory dbDir = Directory(dbDirPath);

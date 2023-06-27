@@ -40,7 +40,7 @@ class RouterManager {
       case RouterConstants.actionListDB:
         DBWorkspaceManager.getInstance().listWorkspaceDBFile((dbFileList) {
           String dbFileListJson = jsonEncode(dbFileList).toString();
-          callback?.call(dbFileListJson);
+          callback?.call(dbFileListJson, paramRouterId);
         }, dbDirConst);
         break;
       case RouterConstants.actionCreateDB:
