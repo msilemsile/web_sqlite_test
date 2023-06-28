@@ -52,7 +52,7 @@ class WebSQLHttpServer {
         } else {
           RouterManager.handleRouteAction(webSQLRouter, (result, [routerId]) {
             HttpResponse httpResponse = httpRequest.response;
-            httpResponse.writeln(result);
+            httpResponse.write(result);
             httpResponse.close();
           }, DBDirConst.local);
         }

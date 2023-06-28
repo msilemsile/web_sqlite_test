@@ -6,10 +6,10 @@ import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/dialog/DBLanConnectDialog.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/service/LanBroadcastService.dart';
-import 'package:web_sqlite_test/service/LanConnectService.dart';
 import 'package:web_sqlite_test/service/WebSQLHttpClient.dart';
 import 'package:web_sqlite_test/service/WebSQLHttpServer.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
+import 'package:web_sqlite_test/utils/HostHelper.dart';
 
 import '../database/DBConstants.dart';
 import '../database/DBDirConst.dart';
@@ -158,7 +158,13 @@ class _DBWorkspaceDialogState extends State<DBWorkspaceDialog> {
                 } else {
                   HostInfo hostInfo =
                       HostInfo(uri.host, Platform.operatingSystem);
-                  WebSQLHttpClient.getInstance().connect(hostInfo);
+                  String? localWifiIP = HostHelper.getInstance().getWifiIP();
+                  if (localWifiIP != null &&
+                      uri.host.compareTo(localWifiIP) == 0) {
+                    hostInfo.setIsLocalHost(true);
+                  } else {
+                    WebSQLHttpClient.getInstance().connect(hostInfo);
+                  }
                   widget.changeWorkspaceCallback(dbDirConst, hostInfo);
                   widget.hide();
                 }

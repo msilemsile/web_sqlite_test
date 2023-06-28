@@ -76,8 +76,8 @@ class WebSQLHttpClient {
         RouterConstants.actionExecSQL, originDataParams, routerId);
   }
 
-  void _getHttpWebSQLRequest(String actionParams,
-      Map<String, String>? dataParams, String routerId) async {
+  void _getHttpWebSQLRequest(
+      String actionParams, Map<String, String>? dataParams, String routerId) {
     if (_connectHostInfo == null) {
       AppToast.show("主机为空!");
       return;
@@ -87,8 +87,8 @@ class WebSQLHttpClient {
     Map<String, String> queryParameters = {};
     queryParameters.addAll({"action": actionParams});
     if (dataParams != null && dataParams.isNotEmpty) {
-      queryParameters
-          .addAll({"data": Uri.encodeComponent(jsonEncode(dataParams))});
+      queryParameters.addAll(
+          {"data": Uri.encodeComponent(jsonEncode(dataParams).toString())});
     }
     Uri uri = Uri(
         scheme: "http",
@@ -128,9 +128,41 @@ class WebSQLHttpClient {
               }
               break;
           }
+        }).onError((error, stackTrace) {
+          connectFailCallback(actionParams, routerId);
         });
+      }).onError((error, stackTrace) {
+        connectFailCallback(actionParams, routerId);
       });
+    }).onError((error, stackTrace) {
+      connectFailCallback(actionParams, routerId);
     });
+  }
+
+  void connectFailCallback(String action, String routerId) {
+    Log.message("WebSQLHttpClient _getHttpWebSQLRequest connect error");
+    switch (action) {
+      case RouterConstants.actionCreateDB:
+        for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
+          callback.onOpenOrCreateDB("0", routerId);
+        }
+        break;
+      case RouterConstants.actionDeleteDB:
+        for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
+          callback.onDeleteDB("0", routerId);
+        }
+        break;
+      case RouterConstants.actionListDB:
+        for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
+          callback.onListDBFile([], routerId);
+        }
+        break;
+      case RouterConstants.actionExecSQL:
+        for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
+          callback.onExecSQLResult("", routerId);
+        }
+        break;
+    }
   }
 
   void addWebRouterCallback(WebSQLRouterCallback callback) {

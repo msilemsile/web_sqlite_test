@@ -100,6 +100,7 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     } else if (dbDirConst == DBDirConst.server) {
       String routerId =
           RouterManager.buildTempRouterId(RouterConstants.actionCreateDB);
+      _openOrCreateDBCallbackMap[routerId] = createDBCallback;
       WebSQLHttpClient.getInstance().openOrCreateDB(databaseName, routerId);
     } else {
       DBFileHelper.openDatabase(databaseName, dbDirConst)?.then((value) {

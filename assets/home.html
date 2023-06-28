@@ -9,9 +9,9 @@
         ///路由协议格式
         ///websql://host?action=xxx&data={jsonData}
 
-        function execSQL(routerId,databaseName,sql,params){
+        function execSQL(routerId,dbName,sql,params){
             try {
-                const jsonDataParamsMap = new Map().set("databaseName",databaseName)
+                const jsonDataParamsMap = new Map().set("dbName",dbName)
                                         .set("sql",sql)
                                         .set("sqlParams",params);
                 window.websql.postMessage(buildWebSQLRoute(routerId,'execSQL',jsonDataParamsMap));

@@ -20,13 +20,13 @@ class RouterManager {
       callback?.call("WebSQLRouter parseToWebSQLRouter error");
       return;
     }
-    Log.message("WebSQLRouter route parse url $webSQLRouter");
     handleRouteAction(webSQLRouter, callback);
   }
 
   static void handleRouteAction(
       WebSQLRouter webSQLRouter, RouterCallback? callback,
       [DBDirConst? dbDirConst]) {
+    Log.message("WebSQLRouter route parse url $webSQLRouter");
     String? paramAction = webSQLRouter.action;
     String? paramRouterId = webSQLRouter.routerId;
     Map<String, dynamic>? paramDataResult = webSQLRouter.jsonData;
@@ -47,55 +47,47 @@ class RouterManager {
         if (paramDataResult == null) {
           return;
         }
-        String? databaseName = paramDataResult["databaseName"];
+        String? databaseName = paramDataResult[RouterConstants.dataDBName];
         if (databaseName == null) {
           callback?.call("databaseName is null", paramRouterId);
           return;
         }
         DBWorkspaceManager.getInstance().openOrCreateWorkspaceDB(databaseName,
             (result) {
-          if (result.compareTo("1") == 0) {
-            callback?.call("创建$databaseName数据库成功");
-          } else {
-            callback?.call("创建$databaseName数据库失败!");
-          }
+          callback?.call(result, paramRouterId);
         }, dbDirConst);
         break;
       case RouterConstants.actionDeleteDB:
         if (paramDataResult == null) {
           return;
         }
-        String? databaseName = paramDataResult["databaseName"];
+        String? databaseName = paramDataResult[RouterConstants.dataDBName];
         if (databaseName == null) {
           callback?.call("databaseName is null", paramRouterId);
           return;
         }
         DBWorkspaceManager.getInstance().deleteWorkspaceDB(databaseName,
             (result) {
-          if (result.compareTo("1") == 0) {
-            callback?.call("删除$databaseName数据库成功");
-          } else {
-            callback?.call("删除$databaseName数据库失败!");
-          }
+          callback?.call(result, paramRouterId);
         }, dbDirConst);
         break;
       case RouterConstants.actionExecSQL:
         if (paramDataResult == null) {
           return;
         }
-        String? databaseName = paramDataResult["databaseName"];
+        String? databaseName = paramDataResult[RouterConstants.dataDBName];
         if (databaseName == null) {
           callback?.call("databaseName is null", paramRouterId);
           return;
         }
-        String? sql = paramDataResult['sql'];
+        String? sql = paramDataResult[RouterConstants.dataSQL];
         if (sql == null) {
           callback?.call("exec sql is null", paramRouterId);
           return;
         }
         List<dynamic>? sqlParams;
         try {
-          sqlParams = paramDataResult['sqlParams'] as List?;
+          sqlParams = paramDataResult[RouterConstants.dataSQLParams] as List?;
         } catch (error) {
           Log.message("WebSQLRouter route sqlParams parse error");
         }

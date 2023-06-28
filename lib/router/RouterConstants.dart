@@ -32,6 +32,7 @@ abstract class RouterConstants {
   static const String dataResult = "result";
   static const String dataDBName = "dbName";
   static const String dataSQL = "sql";
+  static const String dataSQLParams = "sqlParams";
   static const String dataShakeHands = "shakeHands";
 
   static String buildSocketBroadcastRoute(String wifiIP) {
