@@ -63,6 +63,18 @@ class WebSQLHttpClient {
     _getHttpWebSQLRequest(RouterConstants.actionListDB, null, routerId);
   }
 
+  void downloadDB(String dbName, String routerId) {
+    if (_connectHostInfo == null) {
+      AppToast.show("主机为空!");
+      return;
+    }
+    Map<String, String> originDataParams = {
+      RouterConstants.dataDBName: dbName,
+    };
+    _getHttpWebSQLRequest(
+        RouterConstants.actionDownloadDB, originDataParams, routerId);
+  }
+
   void execSQL(String databaseName, String sql, String routerId) {
     if (_connectHostInfo == null) {
       AppToast.show("主机为空!");

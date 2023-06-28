@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:flutter_app/common/widget/AppToast.dart';
 import 'package:web_sqlite_test/database/DBDirConst.dart';
+import 'package:web_sqlite_test/database/DBFileHelper.dart';
 import 'package:web_sqlite_test/database/DBWorkspaceManager.dart';
 import 'package:web_sqlite_test/model/DBFileInfo.dart';
 import 'package:web_sqlite_test/model/HostInfo.dart';
@@ -37,6 +38,10 @@ class LanConnectService {
   RawSocket? _clientSocket;
   RawServerSocket? _serverSocket;
   HostInfo? _connectHostInfo;
+  String? _downloadDatabaseName;
+  String? _downloadDBRouterId;
+  File? _downloadDBFile;
+  IOSink? _downloadDBFileIOSink;
   final Set<OnLanConnectCallback> _onLanConnectSet = {};
   final Set<WebSQLRouterCallback> _webSQLCallbackSet = {};
   Timer? _connectTimeoutTimer;
@@ -111,7 +116,50 @@ class LanConnectService {
           callback.onConnectState(connectStateDisconnect);
         }
       } else if (socketEvent == RawSocketEvent.read) {
-        Uint8List? uint8list = _clientSocket?.read(_clientSocket?.available());
+        if (_downloadDBFile != null) {
+          int startFileLength = _downloadDatabaseName!.length + "start".length;
+          int endFileLength = _downloadDatabaseName!.length + "end".length;
+          int? availableLength = _clientSocket?.available();
+          if (availableLength != null) {
+            Log.message(
+                "LanConnectService _downloadDatabaseName availableLength: $availableLength");
+            if (availableLength == startFileLength) {
+              String startFileTag = "${_downloadDatabaseName!}start";
+              Uint8List? uint8list = _clientSocket?.read(availableLength);
+              if (uint8list != null) {
+                String dataReceive = String.fromCharCodes(uint8list);
+                if (dataReceive.compareTo(startFileTag) == 0) {
+                  _downloadDBFileIOSink = _downloadDBFile?.openWrite();
+                  Log.message(
+                      "LanConnectService start _downloadDatabaseName $_downloadDatabaseName");
+                  return;
+                }
+              }
+            }
+            if (availableLength == endFileLength) {
+              String endFileTag = "${_downloadDatabaseName!}end";
+              Uint8List? uint8list = _clientSocket?.read(availableLength);
+              if (uint8list != null) {
+                String dataReceive = String.fromCharCodes(uint8list);
+                if (dataReceive.compareTo(endFileTag) == 0) {
+                  onDownloadDBFileResult("1", _downloadDBRouterId ?? "0");
+                  Log.message(
+                      "LanConnectService end _downloadDatabaseName $_downloadDatabaseName");
+                  return;
+                }
+              }
+            }
+            Uint8List? uint8list = _clientSocket?.read(availableLength);
+            if (uint8list != null) {
+              _downloadDBFileIOSink?.add(uint8list.toList());
+              Log.message(
+                  "LanConnectService _downloadDatabaseName write file $_downloadDatabaseName");
+            }
+          }
+          return;
+        }
+        int? availableLength = _clientSocket?.available();
+        Uint8List? uint8list = _clientSocket?.read(availableLength);
         if (uint8list != null) {
           String dataReceive = String.fromCharCodes(uint8list);
           Log.message(
@@ -210,8 +258,7 @@ class LanConnectService {
                   callback.onOpenOrCreateDB(result, routerId);
                 }
               }
-            } else if (webSQLRouter.action!
-                    .compareTo(RouterConstants.actionDeleteDB) ==
+            } else if (webSQLRouter.action!.compareTo(RouterConstants.actionDeleteDB) ==
                 0) {
               if (jsonData != null) {
                 String? databaseName = jsonData[RouterConstants.dataDBName];
@@ -271,6 +318,60 @@ class LanConnectService {
                   }
                 }
               }
+            } else if (webSQLRouter.action!.compareTo(RouterConstants.actionDownloadDB) ==
+                0) {
+              if (jsonData != null) {
+                String? databaseName = jsonData[RouterConstants.dataDBName];
+                if (databaseName != null) {
+                  DBFileHelper.openDBRandomAccessFile(
+                          databaseName, DBDirConst.local)
+                      .then((dbFile) async {
+                    String startFileTag = "${databaseName}start";
+                    String endFileTag = "${databaseName}end";
+                    if (dbFile != null) {
+                      _clientSocket
+                          ?.write(Uint8List.fromList(startFileTag.codeUnits));
+                      Log.message(
+                          "LanConnectService start write _downloadDatabaseName $databaseName");
+                      List<int> byteBuffer = List.filled(1024, 0);
+                      int currentPosition = 0;
+                      while (true) {
+                        await dbFile.setPosition(currentPosition);
+                        int readIntoLength = await dbFile.readInto(byteBuffer);
+                        Log.message(
+                            "LanConnectService write _downloadDatabaseName $databaseName readIntoLength: $readIntoLength");
+                        if (readIntoLength < 1024) {
+                          _clientSocket?.write(Uint8List.fromList(
+                              byteBuffer.sublist(0, readIntoLength)));
+                          break;
+                        }
+                        _clientSocket?.write(Uint8List.fromList(byteBuffer));
+                        currentPosition += readIntoLength;
+                      }
+                      await dbFile.close();
+                      _clientSocket
+                          ?.write(Uint8List.fromList(endFileTag.codeUnits));
+                      Log.message(
+                          "LanConnectService end write _downloadDatabaseName $databaseName");
+                    } else {
+                      sendMessage(RouterConstants.buildDownloadDBResultRoute(
+                          databaseName, "0", routerId));
+                    }
+                  });
+                }
+              }
+            } else if (webSQLRouter.action!
+                    .compareTo(RouterConstants.actionDownloadDBResult) ==
+                0) {
+              if (jsonData != null) {
+                String? databaseName = jsonData[RouterConstants.dataDBName];
+                String? result = jsonData[RouterConstants.dataResult];
+                if (databaseName != null) {
+                  routerId ??= "0";
+                  result ??= "0";
+                  onDownloadDBFileResult(result, routerId);
+                }
+              }
             }
           }
         }
@@ -282,6 +383,33 @@ class LanConnectService {
     Log.message("LanConnectService LanConnectService sendMessage: $message");
     var msgInts = Uint8List.fromList(message.codeUnits);
     _clientSocket?.write(msgInts, 0, msgInts.length);
+  }
+
+  Future<void> setDownloadDBFileInfo(
+      String databaseName, String downloadRouterId) async {
+    _downloadDatabaseName = databaseName;
+    _downloadDBRouterId = downloadRouterId;
+    _downloadDBFile = await DBFileHelper.createDBTempFile(databaseName);
+  }
+
+  Future<void> onDownloadDBFileResult(String result, String routerId) async {
+    Log.message(
+        "LanConnectService onDownloadDBFileResult result: $result routerId: $routerId");
+    if (_downloadDatabaseName != null) {
+      await _downloadDBFileIOSink?.close();
+      _downloadDBFileIOSink = null;
+      _downloadDBFile = null;
+      await DBFileHelper.renameDBTempFile(_downloadDatabaseName!);
+      for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
+        callback.onDownLoadDBResult(_downloadDatabaseName!, result, routerId);
+      }
+    }
+    _downloadDatabaseName = null;
+    _downloadDBRouterId = null;
+  }
+
+  bool isDownloadDBFile() {
+    return _downloadDatabaseName != null;
   }
 
   bool isConnectedService() {
@@ -321,6 +449,7 @@ class LanConnectService {
   void unConnectService() {
     cancelConnectTimeoutTimer();
     _connectHostInfo = null;
+    _downloadDatabaseName = null;
     _clientSocket?.close();
     _clientSocket = null;
     Log.message("LanConnectService unConnectService over");

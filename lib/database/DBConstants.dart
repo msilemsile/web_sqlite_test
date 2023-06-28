@@ -15,6 +15,8 @@ abstract class DBConstants {
 
   static Map<DBDirConst, String> dbDirConstMap = {
     DBDirConst.local: dbLocalDirName,
+    DBDirConst.lan: dbCacheLanDirName,
+    DBDirConst.server: dbCacheServerDirName,
     DBDirConst.cacheLan: dbCacheLanDirName,
     DBDirConst.cacheServer: dbCacheServerDirName,
     DBDirConst.temp: dbTempDirName,

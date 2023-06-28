@@ -124,7 +124,7 @@ class _WebViewWrapperState extends State<WebViewWrapper>
   Widget buildUnSupportPlatform() {
     return const Center(
       child: Text(
-        "暂不支持该平台",
+        "WebView暂不支持该平台",
         style: TextStyle(color: Colors.red),
       ),
     );

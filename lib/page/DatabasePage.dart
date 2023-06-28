@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_app/flutter_app.dart';
@@ -15,6 +17,7 @@ import 'package:web_sqlite_test/service/OnLanConnectCallback.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 
 import '../database/DBDirConst.dart';
+import '../widget/TriangleShapeWidget.dart';
 
 class DatabasePage extends StatefulWidget {
   final OnTabPageCreateListener onTabPageCreateListener;
@@ -135,6 +138,21 @@ class _DatabasePageState extends State<DatabasePage>
         stokeColor: AppColors.mainColor,
         child: Stack(
           children: [
+            Visibility(
+                visible: DBWorkspaceManager.getInstance().isRemoteDBDir(),
+                child: Transform.rotate(
+                    angle: -pi / 4,
+                    child: TriangleShapeWidget(
+                      AppColors.redColor,
+                      15,
+                      15,
+                      child: Image.asset(
+                        "images/icon_remote_control.png",
+                        width: 15,
+                        height: 15,
+                        color: AppColors.whiteColor,
+                      ),
+                    ))),
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
@@ -176,18 +194,19 @@ class _DatabasePageState extends State<DatabasePage>
                           solidColor: AppColors.redColor,
                           cornerAll: 2,
                           child: SizedBox(
-                            width: 80,
-                            height: 32,
+                            width: 60,
+                            height: 30,
                             child: Center(
                               child: Text(
                                 "删除",
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 13),
                               ),
                             ),
                           ),
                         ),
                       ),
-                      SpaceWidget.createWidthHeightSpace(10, 50),
+                      SpaceWidget.createWidthHeightSpace(5, 50),
                       GestureDetector(
                         onTap: () {
                           DBWorkspaceManager.getInstance()
@@ -199,17 +218,71 @@ class _DatabasePageState extends State<DatabasePage>
                           solidColor: AppColors.mainColor,
                           cornerAll: 2,
                           child: SizedBox(
-                            width: 80,
-                            height: 32,
+                            width: 60,
+                            height: 30,
                             child: Center(
                               child: Text(
                                 "命令",
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 13),
                               ),
                             ),
                           ),
                         ),
                       ),
+                      Visibility(
+                          visible:
+                              DBWorkspaceManager.getInstance().isRemoteDBDir(),
+                          child: Row(
+                            children: [
+                              SpaceWidget.createWidthHeightSpace(5, 50),
+                              GestureDetector(
+                                onTap: () {
+                                  DBWorkspaceManager.getInstance()
+                                      .downloadWorkspaceDB(
+                                          dbFileInfo.dbFileName,
+                                          (dbName, result) {
+                                    if (result.compareTo("1") == 0) {
+                                      AppToast.show(
+                                          "下载${dbFileInfo.dbFileName}数据库成功");
+                                      DBDirConst currentDBDir =
+                                          DBWorkspaceManager.getInstance()
+                                              .getCurrentDBDir();
+                                      if (currentDBDir == DBDirConst.lan) {
+                                        currentDBDir = DBDirConst.cacheLan;
+                                      } else if (currentDBDir ==
+                                          DBDirConst.server) {
+                                        currentDBDir = DBDirConst.cacheServer;
+                                      }
+                                      AppAlertDialog.builder()
+                                          .setTitle("提示")
+                                          .setContent(
+                                              "下载成功,数据库保存在\"工作空间->${DBConstants.getDBDirTitle(currentDBDir)}\",请手动切换至该工作空间")
+                                          .show(context);
+                                    } else {
+                                      AppToast.show(
+                                          "下载${dbFileInfo.dbFileName}数据库失败!");
+                                    }
+                                  });
+                                },
+                                child: const RectangleShape(
+                                  solidColor: AppColors.mainColor,
+                                  cornerAll: 2,
+                                  child: SizedBox(
+                                    width: 60,
+                                    height: 30,
+                                    child: Center(
+                                      child: Text(
+                                        "下载",
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 13),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )),
                     ],
                   ),
                 )),

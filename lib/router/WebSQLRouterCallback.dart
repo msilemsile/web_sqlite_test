@@ -8,4 +8,6 @@ mixin WebSQLRouterCallback {
   onListDBFile(List<DBFileInfo> dbFileList, [String? routerId]);
 
   onExecSQLResult(String result, [String? routerId]);
+
+  onDownLoadDBResult(String dbName, String result, [String? routerId]);
 }

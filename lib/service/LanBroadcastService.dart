@@ -57,7 +57,7 @@ class LanBroadcastService {
     await sendBroadcast(multicastAddress, connectListenPort,
         RouterConstants.buildSocketBroadcastRoute(localWifiIP));
     // Log.message("LanBroadcastService _periodicBroadcast end");
-    Timer(const Duration(seconds: 2), () {
+    Timer(const Duration(milliseconds: 300), () {
       _periodicBroadcast(localWifiIP);
     });
     // Log.message("LanBroadcastService _periodicBroadcast delay 2s");

@@ -6,9 +6,6 @@ import 'package:web_sqlite_test/page/SettingPage.dart';
 import 'package:web_sqlite_test/theme/AppColors.dart';
 import 'package:web_sqlite_test/utils/AppHelper.dart';
 
-import '../service/LanBroadcastService.dart';
-import '../service/LanConnectService.dart';
-
 class HomePage extends StatefulWidget {
   static const int tabBrowser = 0;
   static const int tabDatabase = 1;
@@ -24,9 +21,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
-  final ValueNotifier<int> _currentTab = ValueNotifier(HomePage.tabBrowser);
+  final ValueNotifier<int> _currentTab = ValueNotifier(HomePage.tabDatabase);
   final ValueNotifier<bool> _terminalShow = ValueNotifier(false);
-  final PageController _pageController = PageController();
+  final PageController _pageController = PageController(initialPage: HomePage.tabDatabase);
   HomeTabTapController? _browserTabController;
   HomeTabTapController? _databaseTabController;
   HomeTabTapController? _settingTabController;
@@ -45,8 +42,8 @@ class _HomePageState extends State<HomePage>
         } else if (tabIndex == HomePage.tabSetting) {
           canGoBack = await _settingTabController?.canGoBack();
         }
-        canGoBack??=true;
-        if(canGoBack){
+        canGoBack ??= true;
+        if (canGoBack) {
           AppHelper.releaseResource();
         }
         return canGoBack;

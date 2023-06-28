@@ -24,6 +24,8 @@ abstract class RouterConstants {
   static const String actionDeleteDBResult = "deleteDBResult";
   static const String actionExecSQL = "execSQL";
   static const String actionExecSQLResult = "execSQLResult";
+  static const String actionDownloadDB = "downloadDB";
+  static const String actionDownloadDBResult = "downloadDBResult";
 
   ///param data
   static const String dataRouterId = "routerId";
@@ -123,6 +125,23 @@ abstract class RouterConstants {
     routerId ??= "0";
     var webSQLRoute = RouterManager.buildWebSQLRoute(
         RouterConstants.actionExecSQLResult,
+        {dataDBName: dbName, dataResult: result, dataRouterId: routerId});
+    return webSQLRoute;
+  }
+
+  static String buildDownloadDBRoute(String dbName, [String? routerId]) {
+    routerId ??= "0";
+    String webSQLRoute = RouterManager.buildWebSQLRoute(
+        RouterConstants.actionDownloadDB,
+        {dataDBName: dbName, dataRouterId: routerId});
+    return webSQLRoute;
+  }
+
+  static String buildDownloadDBResultRoute(String dbName, String result,
+      [String? routerId]) {
+    routerId ??= "0";
+    String webSQLRoute = RouterManager.buildWebSQLRoute(
+        RouterConstants.actionDownloadDBResult,
         {dataDBName: dbName, dataResult: result, dataRouterId: routerId});
     return webSQLRoute;
   }

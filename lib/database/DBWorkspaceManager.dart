@@ -18,6 +18,7 @@ typedef OnOpenOrCreateDBCallback = Function(String result);
 typedef OnDeleteDBCallback = Function(String result);
 typedef OnWebSQLExecResultCallback = Function(String result);
 typedef OnWebSQLListDBCallback = Function(List<DBFileInfo> dbFileList);
+typedef OnDownloadDBCallback = Function(String dbName, String result);
 
 class DBWorkspaceManager with WebSQLRouterCallback {
   DBWorkspaceManager._();
@@ -26,6 +27,7 @@ class DBWorkspaceManager with WebSQLRouterCallback {
   final Map<String, OnWebSQLListDBCallback> _listDBCallbackMap = {};
   final Map<String, OnOpenOrCreateDBCallback> _openOrCreateDBCallbackMap = {};
   final Map<String, OnDeleteDBCallback> _deleteDBCallbackMap = {};
+  final Map<String, OnDownloadDBCallback> _downLoadDBCallbackMap = {};
 
   static DBWorkspaceManager? _dbWorkspaceManager;
 
@@ -79,12 +81,42 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     return _currentDBDir;
   }
 
+  bool isRemoteDBDir() {
+    return _currentDBDir == DBDirConst.lan ||
+        _currentDBDir == DBDirConst.server;
+  }
+
   void setLastConnectDBFile(DBFileInfo dbFileInfo) {
     _lastConnectDBFile = dbFileInfo;
   }
 
   DBFileInfo? getLastConnectDBFile() {
     return _lastConnectDBFile;
+  }
+
+  void downloadWorkspaceDB(String dbName, OnDownloadDBCallback callback) async {
+    if (_currentDBDir == DBDirConst.lan) {
+      bool isDownloadDBFile =
+          LanConnectService.getInstance().isDownloadDBFile();
+      if (isDownloadDBFile) {
+        AppToast.show("正在下载数据库，请等待...");
+      } else {
+        String routerId =
+            RouterManager.buildTempRouterId(RouterConstants.actionDownloadDB);
+        _downLoadDBCallbackMap[routerId] = callback;
+        await LanConnectService.getInstance()
+            .setDownloadDBFileInfo(dbName, routerId);
+        LanConnectService.getInstance().sendMessage(
+            RouterConstants.buildDownloadDBRoute(dbName, routerId));
+      }
+    } else if (_currentDBDir == DBDirConst.server) {
+      String routerId =
+          RouterManager.buildTempRouterId(RouterConstants.actionDownloadDB);
+      _downLoadDBCallbackMap[routerId] = callback;
+      WebSQLHttpClient.getInstance().downloadDB(dbName, routerId);
+    } else {
+      AppToast.show("本地空间不需要下载数据库");
+    }
   }
 
   void openOrCreateWorkspaceDB(
@@ -245,6 +277,19 @@ class DBWorkspaceManager with WebSQLRouterCallback {
       if (callback != null) {
         callback(result);
         _openOrCreateDBCallbackMap.remove(routerId);
+      }
+    }
+  }
+
+  @override
+  onDownLoadDBResult(String dbName, String result, [String? routerId]) {
+    Log.message(
+        "onDownLoadDBResult--routerId: $routerId || dbName: $dbName || result: $result");
+    if (routerId != null) {
+      OnDownloadDBCallback? callback = _downLoadDBCallbackMap[routerId];
+      if (callback != null) {
+        callback(dbName, result);
+        _downLoadDBCallbackMap.remove(routerId);
       }
     }
   }

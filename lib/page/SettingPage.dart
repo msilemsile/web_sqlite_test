@@ -176,7 +176,7 @@ class _SettingPageState extends State<SettingPage>
                           child: RichText(
                               text: TextSpan(children: [
                             const TextSpan(
-                                text: "API请求地址: ",
+                                text: "本机服务器地址: ",
                                 style: TextStyle(color: AppColors.mainColor)),
                             TextSpan(
                                 text: WebSQLHttpServer.getInstance()
