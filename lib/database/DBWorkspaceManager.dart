@@ -113,6 +113,7 @@ class DBWorkspaceManager with WebSQLRouterCallback {
       String routerId =
           RouterManager.buildTempRouterId(RouterConstants.actionDownloadDB);
       _downLoadDBCallbackMap[routerId] = callback;
+      await WebSQLHttpClient.getInstance().setDownloadDBFileInfo(dbName, routerId);
       WebSQLHttpClient.getInstance().downloadDB(dbName, routerId);
     } else {
       AppToast.show("本地空间不需要下载数据库");

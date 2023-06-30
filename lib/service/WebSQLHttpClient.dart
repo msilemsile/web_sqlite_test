@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:flutter_app/common/widget/AppToast.dart';
@@ -7,6 +8,7 @@ import 'package:web_sqlite_test/model/HostInfo.dart';
 import 'package:web_sqlite_test/router/RouterConstants.dart';
 import 'package:web_sqlite_test/service/WebSQLHttpServer.dart';
 
+import '../database/DBFileHelper.dart';
 import '../model/DBFileInfo.dart';
 import '../router/WebSQLRouterCallback.dart';
 
@@ -22,6 +24,9 @@ class WebSQLHttpClient {
 
   HostInfo? _connectHostInfo;
   HttpClient? _httpClient;
+  String? _downloadDatabaseName;
+  String? _downloadDBRouterId;
+  File? _downloadDBFile;
   final Set<WebSQLRouterCallback> _webSQLCallbackSet = {};
 
   void connect(HostInfo hostInfo) {
@@ -88,6 +93,27 @@ class WebSQLHttpClient {
         RouterConstants.actionExecSQL, originDataParams, routerId);
   }
 
+  Future<void> setDownloadDBFileInfo(
+      String databaseName, String downloadRouterId) async {
+    _downloadDatabaseName = databaseName;
+    _downloadDBRouterId = downloadRouterId;
+    _downloadDBFile = await DBFileHelper.createDBTempFile(databaseName);
+  }
+
+  Future<void> onDownloadDBFileResult(String result, String routerId) async {
+    Log.message(
+        "WebSQLHttpClient onDownloadDBFileResult result: $result routerId: $routerId");
+    if (_downloadDatabaseName != null) {
+      _downloadDBFile = null;
+      await DBFileHelper.renameDBTempFile(_downloadDatabaseName!);
+      for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
+        callback.onDownLoadDBResult(_downloadDatabaseName!, result, routerId);
+      }
+    }
+    _downloadDatabaseName = null;
+    _downloadDBRouterId = null;
+  }
+
   void _getHttpWebSQLRequest(
       String actionParams, Map<String, String>? dataParams, String routerId) {
     if (_connectHostInfo == null) {
@@ -108,7 +134,31 @@ class WebSQLHttpClient {
         port: WebSQLHttpServer.httpServerListenPort,
         queryParameters: queryParameters);
     _httpClient?.getUrl(uri).then((httpClientRequest) {
-      httpClientRequest.close().then((httpClientResponse) {
+      httpClientRequest.close().then((HttpClientResponse httpClientResponse) {
+        if (actionParams.compareTo(RouterConstants.actionDownloadDB) == 0 &&
+            _downloadDatabaseName != null) {
+          Log.message(
+              "WebSQLHttpClient _getHttpWebSQLRequest start write _downloadDatabaseName : $_downloadDatabaseName header: ${httpClientResponse.headers}");
+          IOSink? ioSink = _downloadDBFile?.openWrite();
+          httpClientResponse.listen((event) {
+            if (ioSink != null) {
+              Log.message(
+                  "WebSQLHttpClient _getHttpWebSQLRequest write _downloadDatabaseName : $_downloadDatabaseName list: $event");
+              ioSink.add(event);
+            } else {
+              onDownloadDBFileResult("0", routerId);
+            }
+          }, onDone: () {
+            ioSink?.close();
+            Log.message(
+                "WebSQLHttpClient _getHttpWebSQLRequest end _downloadDatabaseName : $_downloadDatabaseName");
+            onDownloadDBFileResult("1", routerId);
+          }, onError: () {
+            ioSink?.close();
+            onDownloadDBFileResult("0", routerId);
+          });
+          return;
+        }
         httpClientResponse.transform(utf8.decoder).join().then((result) {
           Log.message(
               "WebSQLHttpClient _getHttpWebSQLRequest result : $result");

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:flutter_app/common/widget/AppToast.dart';
@@ -7,6 +8,7 @@ import 'package:web_sqlite_test/model/WebSQLRouter.dart';
 import 'package:web_sqlite_test/router/RouterConstants.dart';
 import 'package:web_sqlite_test/router/RouterManager.dart';
 
+import '../database/DBFileHelper.dart';
 import '../utils/HostHelper.dart';
 
 class WebSQLHttpServer {
@@ -49,6 +51,54 @@ class WebSQLHttpServer {
       if (parameters.isNotEmpty && webSQLRouter != null) {
         if (webSQLRouter.action == null) {
           writeApiResponse(httpRequest);
+        } else if (webSQLRouter.action!
+                .compareTo(RouterConstants.actionDownloadDB) ==
+            0) {
+          Map<String, dynamic>? jsonData = webSQLRouter.jsonData;
+          if (jsonData != null) {
+            String? databaseName = jsonData[RouterConstants.dataDBName];
+            if (databaseName != null) {
+              HttpResponse httpResponse = httpRequest.response;
+              httpResponse.headers.add(
+                  HttpHeaders.contentTypeHeader, "application/octet-stream");
+              DBFileHelper.openDBRandomAccessFile(
+                      databaseName, DBDirConst.local)
+                  .then((dbFile) async {
+                if (dbFile != null) {
+                  Log.message(
+                      "WebSQLHttpServer start write _downloadDatabaseName $databaseName");
+                  List<int> byteBuffer = List.filled(1024, 0);
+                  int currentPosition = 0;
+                  while (true) {
+                    await dbFile.setPosition(currentPosition);
+                    int readIntoLength = await dbFile.readInto(byteBuffer);
+                    Log.message(
+                        "WebSQLHttpServer write _downloadDatabaseName $databaseName list: $byteBuffer");
+                    if (readIntoLength < 1024) {
+                      httpResponse.add(byteBuffer.sublist(0, readIntoLength));
+                      break;
+                    }
+                    httpResponse.add(byteBuffer);
+                    currentPosition += readIntoLength;
+                  }
+                  await dbFile.close();
+                  httpResponse.close();
+                  Log.message(
+                      "WebSQLHttpServer end write _downloadDatabaseName $databaseName");
+                } else {
+                  httpRequest.response.statusCode =
+                      HttpStatus.internalServerError;
+                  httpRequest.response.close();
+                }
+              });
+            } else {
+              httpRequest.response.statusCode = HttpStatus.internalServerError;
+              httpRequest.response.close();
+            }
+          } else {
+            httpRequest.response.statusCode = HttpStatus.internalServerError;
+            httpRequest.response.close();
+          }
         } else {
           RouterManager.handleRouteAction(webSQLRouter, (result, [routerId]) {
             HttpResponse httpResponse = httpRequest.response;
