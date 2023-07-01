@@ -14,7 +14,7 @@ android | ios | windows | macos(WebView暂不支持) | linux(WebView暂不支持
 
 4.提供http协议下sqlite API
 
-5.客户端和局域网或者服务端数据同步(设计中...)
+5.客户端和局域网或者服务端数据同步
 
 示例如下：
 
@@ -25,5 +25,7 @@ android | ios | windows | macos(WebView暂不支持) | linux(WebView暂不支持
 ![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/setting.png)
 
 ![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/broadcast.png)
+
+![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/httpserver.png)
 
 ![Image](https://github.com/msilemsile/web_sqlite_test/blob/master/command.png)
