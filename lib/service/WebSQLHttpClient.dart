@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:flutter_app/common/widget/AppToast.dart';
@@ -104,14 +103,12 @@ class WebSQLHttpClient {
     Log.message(
         "WebSQLHttpClient onDownloadDBFileResult result: $result routerId: $routerId");
     if (_downloadDatabaseName != null) {
-      _downloadDBFile = null;
       await DBFileHelper.renameDBTempFile(_downloadDatabaseName!);
       for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
         callback.onDownLoadDBResult(_downloadDatabaseName!, result, routerId);
       }
     }
-    _downloadDatabaseName = null;
-    _downloadDBRouterId = null;
+    clearDownloadCache();
   }
 
   void _getHttpWebSQLRequest(
@@ -123,10 +120,12 @@ class WebSQLHttpClient {
     Log.message(
         "WebSQLHttpClient _getHttpWebSQLRequest action : $actionParams dataParams : $dataParams");
     Map<String, String> queryParameters = {};
-    queryParameters.addAll({"action": actionParams});
+    queryParameters.addAll({RouterConstants.constParamAction: actionParams});
+    queryParameters.addAll({RouterConstants.constParamRouterId: routerId});
     if (dataParams != null && dataParams.isNotEmpty) {
-      queryParameters.addAll(
-          {"data": Uri.encodeComponent(jsonEncode(dataParams).toString())});
+      dataParams.forEach((key, value) {
+        queryParameters[key] = Uri.encodeComponent(value);
+      });
     }
     Uri uri = Uri(
         scheme: "http",
@@ -235,8 +234,15 @@ class WebSQLHttpClient {
     _webSQLCallbackSet.remove(callback);
   }
 
+  void clearDownloadCache(){
+    _downloadDatabaseName = null;
+    _downloadDBFile = null;
+    _downloadDBRouterId = null;
+  }
+
   void destroy() {
     Log.message("WebSQLHttpClient--destroy");
+    clearDownloadCache();
     _connectHostInfo = null;
     _webSQLCallbackSet.clear();
     _httpClient?.close(force: true);

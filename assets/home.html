@@ -7,7 +7,7 @@
     <script src="./base64.min.js"></script>
     <script>
         ///路由协议格式
-        ///websql://host?action=xxx&data={jsonData}
+        ///websql://host?action=xxx&routerId=xxx&dataKey=dataValue
 
         function execSQL(routerId,dbName,sql,params){
             try {
@@ -55,12 +55,15 @@
             const routerSchema = "websql://"
             const routerHost = "host"
             const routerAction = "action="
-            const routerJsonData = "data="
             const routerIdConst = "routerId="
-            return routerSchema + routerHost + "?" 
-            + routerAction + actionParamsName + "&" 
-            + routerJsonData + encodeURIComponent(mapToJson(jsonDataParamsMap)) + "&"
+            var webSQLRouter = routerSchema + routerHost + "?" 
+            + routerAction + actionParamsName + "&"
             + routerIdConst + routerId;
+            for (var [key, value] of jsonDataParamsMap) {
+                console.log(key + ' = ' + value);
+                webSQLRouter = webSQLRouter + "&" + key + "=" + encodeURIComponent(value);
+            }
+            return webSQLRouter;
         }
 
         function showAlert(msg) {
@@ -81,7 +84,7 @@
     <br>
     <p>自定义协议传输 协议格式如下:</p>
     <br>
-    <p>websql://host?action=xxx&data={jsonData}</p>
+    <p>websql://host?action=xxx&routerId=xxx&dataKey=dataValue</p>
     <br>
     <p>使用window.websql.postMessage("自定义协议")</p>
     <br>

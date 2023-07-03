@@ -168,10 +168,7 @@ class LanConnectService {
               RouterManager.parseToWebSQLRouter(dataReceive);
           if (webSQLRouter != null && webSQLRouter.action != null) {
             Map<String, dynamic>? jsonData = webSQLRouter.jsonData;
-            String? routerId;
-            if (jsonData != null) {
-              routerId = jsonData[RouterConstants.dataRouterId];
-            }
+            String? routerId = webSQLRouter.routerId;
             Log.message(
                 "_listenConnect routerId: $routerId action: ${webSQLRouter.action}");
             if (webSQLRouter.action!.compareTo(RouterConstants.actionConnect) ==
@@ -341,8 +338,10 @@ class LanConnectService {
                         Log.message(
                             "LanConnectService write _downloadDatabaseName $databaseName readIntoLength: $readIntoLength");
                         if (readIntoLength < 1024) {
-                          _clientSocket?.write(Uint8List.fromList(
-                              byteBuffer.sublist(0, readIntoLength)));
+                          if (readIntoLength > 0) {
+                            _clientSocket?.write(Uint8List.fromList(
+                                byteBuffer.sublist(0, readIntoLength)));
+                          }
                           break;
                         }
                         _clientSocket?.write(Uint8List.fromList(byteBuffer));
@@ -404,8 +403,7 @@ class LanConnectService {
         callback.onDownLoadDBResult(_downloadDatabaseName!, result, routerId);
       }
     }
-    _downloadDatabaseName = null;
-    _downloadDBRouterId = null;
+    clearDownloadCache();
   }
 
   bool isDownloadDBFile() {
@@ -446,10 +444,18 @@ class LanConnectService {
     _webSQLCallbackSet.remove(callback);
   }
 
+  void clearDownloadCache() {
+    _downloadDatabaseName = null;
+    _downloadDBFileIOSink?.close();
+    _downloadDBFileIOSink = null;
+    _downloadDBFile = null;
+    _downloadDBRouterId = null;
+  }
+
   void unConnectService() {
+    clearDownloadCache();
     cancelConnectTimeoutTimer();
     _connectHostInfo = null;
-    _downloadDatabaseName = null;
     _clientSocket?.close();
     _clientSocket = null;
     Log.message("LanConnectService unConnectService over");

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter_app/common/log/Log.dart';
 import 'package:flutter_app/common/widget/AppToast.dart';
@@ -116,19 +115,20 @@ class WebSQLHttpServer {
   void writeApiResponse(HttpRequest httpRequest) {
     HttpResponse httpResponse = httpRequest.response;
     String serverPath = getHttpServerPath();
-    httpResponse
-        .writeln("仅支持WebSQL操作,GET请求API如下:(!!!data块为json格式数据,需要url encode编码)");
+    httpResponse.writeln("路由协议格式:");
+    httpResponse.writeln("http://host?action=xxx&dataKey=dataValue");
+    httpResponse.writeln("仅支持WebSQL操作,GET请求API如下:(dataValue需要url encode)");
     httpResponse.writeln("1.获取数据库列表:");
     httpResponse.writeln("$serverPath?action=${RouterConstants.actionListDB}");
     httpResponse.writeln("2.创建数据库:");
     httpResponse.writeln(
-        "$serverPath?action=${RouterConstants.actionCreateDB}&data={${RouterConstants.dataDBName}:数据库名称}");
+        "$serverPath?action=${RouterConstants.actionCreateDB}&${RouterConstants.dataDBName}=数据库名称");
     httpResponse.writeln("3.删除数据库:");
     httpResponse.writeln(
-        "$serverPath?action=${RouterConstants.actionDeleteDB}&data={${RouterConstants.dataDBName}:数据库名称}");
+        "$serverPath?action=${RouterConstants.actionDeleteDB}&${RouterConstants.dataDBName}=数据库名称");
     httpResponse.writeln("4.执行数据库命令:");
     httpResponse.writeln(
-        "$serverPath?action=${RouterConstants.actionExecSQL}&data={${RouterConstants.dataDBName}:数据库名称},${RouterConstants.dataSQL}:数据库语句");
+        "$serverPath?action=${RouterConstants.actionExecSQL}&${RouterConstants.dataDBName}=数据库名称&${RouterConstants.dataSQL}=数据库语句");
     httpResponse.close();
   }
 

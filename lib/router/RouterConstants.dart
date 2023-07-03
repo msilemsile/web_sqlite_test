@@ -10,7 +10,6 @@ abstract class RouterConstants {
   static const String constScheme = "websql";
   static const String constHost = "host";
   static const String constParamAction = "action";
-  static const String constParamData = "data";
   static const String constParamRouterId = "routerId";
 
   ///param action
@@ -28,7 +27,6 @@ abstract class RouterConstants {
   static const String actionDownloadDBResult = "downloadDBResult";
 
   ///param data
-  static const String dataRouterId = "routerId";
   static const String dataHost = "host";
   static const String dataPlatform = "platform";
   static const String dataResult = "result";
@@ -37,16 +35,30 @@ abstract class RouterConstants {
   static const String dataSQLParams = "sqlParams";
   static const String dataShakeHands = "shakeHands";
 
-  static String buildSocketBroadcastRoute(String wifiIP) {
+  static const List<String> dataParams = [
+    dataHost,
+    dataPlatform,
+    dataResult,
+    dataDBName,
+    dataSQL,
+    dataSQLParams,
+    dataShakeHands
+  ];
+
+  static String buildSocketBroadcastRoute(String wifiIP, [String? routerId]) {
+    routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
         RouterConstants.actionBroadcast,
+        routerId,
         {dataHost: wifiIP, dataPlatform: Platform.operatingSystem});
     return webSQLRoute;
   }
 
-  static String buildSocketConnectRoute(String wifiIP, [int shakeHands = 0]) {
-    String webSQLRoute =
-        RouterManager.buildWebSQLRoute(RouterConstants.actionConnect, {
+  static String buildSocketConnectRoute(String wifiIP,
+      [int shakeHands = 0, String? routerId]) {
+    routerId ??= "0";
+    String webSQLRoute = RouterManager.buildWebSQLRoute(
+        RouterConstants.actionConnect, routerId, {
       dataHost: wifiIP,
       dataPlatform: Platform.operatingSystem,
       dataShakeHands: shakeHands.toString()
@@ -56,8 +68,8 @@ abstract class RouterConstants {
 
   static String buildListDBRoute([String? routerId]) {
     routerId ??= "0";
-    String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionListDB, {dataRouterId: routerId});
+    String webSQLRoute =
+        RouterManager.buildWebSQLRoute(RouterConstants.actionListDB, routerId);
     return webSQLRoute;
   }
 
@@ -67,15 +79,15 @@ abstract class RouterConstants {
     String dbFileListJson = jsonEncode(dbFileList).toString();
     String webSQLRoute = RouterManager.buildWebSQLRoute(
         RouterConstants.actionListDBResult,
-        {dataResult: dbFileListJson, dataRouterId: routerId});
+        routerId,
+        {dataResult: dbFileListJson});
     return webSQLRoute;
   }
 
   static String buildCreateDBRoute(String dbName, [String? routerId]) {
     routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionCreateDB,
-        {dataDBName: dbName, dataRouterId: routerId});
+        RouterConstants.actionCreateDB, routerId, {dataDBName: dbName});
     return webSQLRoute;
   }
 
@@ -83,19 +95,16 @@ abstract class RouterConstants {
       [String? routerId]) {
     routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionCreateDBResult, {
-      dataDBName: dbName,
-      dataResult: result.toString(),
-      dataRouterId: routerId
-    });
+        RouterConstants.actionCreateDBResult,
+        routerId,
+        {dataDBName: dbName, dataResult: result.toString()});
     return webSQLRoute;
   }
 
   static String buildDeleteDBRoute(String dbName, [String? routerId]) {
     routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionDeleteDB,
-        {dataDBName: dbName, dataRouterId: routerId});
+        RouterConstants.actionDeleteDB, routerId, {dataDBName: dbName});
     return webSQLRoute;
   }
 
@@ -103,11 +112,9 @@ abstract class RouterConstants {
       [String? routerId]) {
     routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionDeleteDBResult, {
-      dataDBName: dbName,
-      dataResult: result.toString(),
-      dataRouterId: routerId
-    });
+        RouterConstants.actionDeleteDBResult,
+        routerId,
+        {dataDBName: dbName, dataResult: result.toString()});
     return webSQLRoute;
   }
 
@@ -116,7 +123,8 @@ abstract class RouterConstants {
     routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
         RouterConstants.actionExecSQL,
-        {dataDBName: dbName, dataSQL: sql, dataRouterId: routerId});
+        routerId,
+        {dataDBName: dbName, dataSQL: sql});
     return webSQLRoute;
   }
 
@@ -125,15 +133,15 @@ abstract class RouterConstants {
     routerId ??= "0";
     var webSQLRoute = RouterManager.buildWebSQLRoute(
         RouterConstants.actionExecSQLResult,
-        {dataDBName: dbName, dataResult: result, dataRouterId: routerId});
+        routerId,
+        {dataDBName: dbName, dataResult: result});
     return webSQLRoute;
   }
 
   static String buildDownloadDBRoute(String dbName, [String? routerId]) {
     routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
-        RouterConstants.actionDownloadDB,
-        {dataDBName: dbName, dataRouterId: routerId});
+        RouterConstants.actionDownloadDB, routerId, {dataDBName: dbName});
     return webSQLRoute;
   }
 
@@ -142,7 +150,8 @@ abstract class RouterConstants {
     routerId ??= "0";
     String webSQLRoute = RouterManager.buildWebSQLRoute(
         RouterConstants.actionDownloadDBResult,
-        {dataDBName: dbName, dataResult: result, dataRouterId: routerId});
+        routerId,
+        {dataDBName: dbName, dataResult: result});
     return webSQLRoute;
   }
 }

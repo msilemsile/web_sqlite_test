@@ -7,7 +7,7 @@ import 'package:web_sqlite_test/model/WebSQLRouter.dart';
 
 import 'RouterConstants.dart';
 
-///websql://host?action=xxx&data={jsonData}
+///websql://host?action=xxx&routerId=xxx&dataKey=dataValue
 class RouterManager {
   static void route(String routerString, {RouterCallback? callback}) {
     if (routerString.isEmpty) {
@@ -99,16 +99,21 @@ class RouterManager {
     }
   }
 
-  static String buildWebSQLRoute(String actionName,
+  static String buildWebSQLRoute(String actionName, String routerId,
       [Map<String, String>? paramsMap = const {}]) {
-    String jsonData = json.encode(paramsMap).toString();
+    Map<String, String> webSQLParams = {};
+    webSQLParams[RouterConstants.constParamAction] = actionName;
+    webSQLParams[RouterConstants.constParamRouterId] =
+        Uri.encodeComponent(routerId);
+    if (paramsMap != null) {
+      paramsMap.forEach((key, value) {
+        webSQLParams[key] = Uri.encodeComponent(value);
+      });
+    }
     Uri uri = Uri(
         scheme: RouterConstants.constScheme,
         host: RouterConstants.constHost,
-        queryParameters: {
-          RouterConstants.constParamAction: actionName,
-          RouterConstants.constParamData: Uri.encodeComponent(jsonData)
-        });
+        queryParameters: webSQLParams);
     return uri.toString();
   }
 
@@ -129,13 +134,23 @@ class RouterManager {
 
   static WebSQLRouter? convertWebSQLRouter(Map<String, String> parameters) {
     String? paramAction = parameters[RouterConstants.constParamAction];
-    String? paramData = parameters[RouterConstants.constParamData];
-    Map<String, dynamic> jsonData = {};
-    if (paramData != null) {
-      jsonData = jsonDecode(Uri.decodeComponent(paramData));
+    String? paramRouterId = "0";
+    String? routerIdValue = parameters[RouterConstants.constParamRouterId];
+    if (routerIdValue != null) {
+      paramRouterId = Uri.decodeComponent(routerIdValue);
     }
-    String? paramRouterId = parameters[RouterConstants.constParamRouterId];
-    return WebSQLRouter(paramAction, jsonData, paramRouterId);
+    Map<String, dynamic> jsonData = {};
+    parameters.forEach((key, value) {
+      if (key.compareTo(RouterConstants.constParamAction) == 0 ||
+          key.compareTo(RouterConstants.constParamRouterId) == 0) {
+        return;
+      }
+      jsonData[key] = Uri.decodeComponent(value);
+    });
+    WebSQLRouter webSQLRouter =
+        WebSQLRouter(paramAction, jsonData, paramRouterId);
+    Log.message("convertWebSQLRouter---result: $webSQLRouter");
+    return webSQLRouter;
   }
 
   static String buildTempRouterId([String tag = "routerId"]) {
