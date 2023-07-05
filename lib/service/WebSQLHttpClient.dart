@@ -240,10 +240,15 @@ class WebSQLHttpClient {
     _downloadDBRouterId = null;
   }
 
-  void destroy() {
-    Log.message("WebSQLHttpClient--destroy");
+  void unConnect(){
     clearDownloadCache();
     _connectHostInfo = null;
+    Log.message("WebSQLHttpClient--unConnect");
+  }
+
+  void destroy() {
+    Log.message("WebSQLHttpClient--destroy");
+    unConnect();
     _webSQLCallbackSet.clear();
     _httpClient?.close(force: true);
     _httpClient = null;

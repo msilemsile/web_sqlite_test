@@ -22,22 +22,15 @@ class BrowserPage extends StatefulWidget {
 
 class _BrowserPageState extends State<BrowserPage>
     with AutomaticKeepAliveClientMixin, HomeTabTapController {
-  // ,SingleTickerProviderStateMixin {
+
   WebViewWrapperController? webViewWrapperController;
   TextEditingController urlEditingController = TextEditingController();
   FocusNode urlEditFocusNode = FocusNode();
   final ValueNotifier<bool> _showClearTextValue = ValueNotifier(false);
 
-  // late AnimationController _urlInputAnimController;
-  // late Tween<Offset> _urlInputAnimTween;
-
   @override
   void initState() {
     super.initState();
-    // _urlInputAnimTween =
-    //     Tween(begin: const Offset(0, -1), end: const Offset(0, 0));
-    // _urlInputAnimController = AnimationController(
-    //     vsync: this, duration: const Duration(milliseconds: 300));
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       widget.onTabPageCreateListener(this);
     });
@@ -45,7 +38,6 @@ class _BrowserPageState extends State<BrowserPage>
 
   @override
   void dispose() {
-    // _urlInputAnimController.dispose();
     super.dispose();
   }
 
@@ -62,10 +54,6 @@ class _BrowserPageState extends State<BrowserPage>
             loadWebUrl();
           },
         )),
-        // SlideTransition(
-        //   position: _urlInputAnimController.drive(_urlInputAnimTween),
-        //   child: buildTopBrowserWidget(),
-        // ),
       ],
     );
   }

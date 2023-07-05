@@ -57,7 +57,8 @@ class LanConnectService {
     for (OnLanConnectCallback callback in _onLanConnectSet) {
       callback.onConnectState(connectStateStart);
     }
-    IOWebSocketChannel ioWebSocketChannel = IOWebSocketChannel.connect("ws://${hostInfo.host}:$connectListenPort");
+    IOWebSocketChannel ioWebSocketChannel =
+        IOWebSocketChannel.connect("ws://${hostInfo.host}:$connectListenPort");
     ioWebSocketChannel.ready.then((_) {
       _clientSocket = ioWebSocketChannel.innerWebSocket;
       _listenConnect();
@@ -380,7 +381,9 @@ class LanConnectService {
       await _downloadDBFileIOSink?.close();
       _downloadDBFileIOSink = null;
       _downloadDBFile = null;
-      await DBFileHelper.renameDBTempFile(_downloadDatabaseName!);
+      if (result.compareTo("1") == 0) {
+        await DBFileHelper.renameDBTempFile(_downloadDatabaseName!);
+      }
       for (WebSQLRouterCallback callback in _webSQLCallbackSet) {
         callback.onDownLoadDBResult(_downloadDatabaseName!, result, routerId);
       }
@@ -434,7 +437,7 @@ class LanConnectService {
     _connectHostInfo = null;
     _clientSocket?.close();
     _clientSocket = null;
-    Log.message("LanConnectService unConnectService over");
+    Log.message("LanConnectService unConnectService");
   }
 
   void destroy() {
@@ -442,5 +445,6 @@ class LanConnectService {
     unConnectService();
     _onLanConnectSet.clear();
     _webSQLCallbackSet.clear();
+    Log.message("LanConnectService destroy");
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -34,7 +35,8 @@ class _DatabasePageState extends State<DatabasePage>
     with
         AutomaticKeepAliveClientMixin,
         HomeTabTapController,
-        OnLanConnectCallback {
+        OnLanConnectCallback,
+        SingleTickerProviderStateMixin {
   static const int exchangeWorkspaceAction = 0;
   static const int exeSqlAction = 1;
   static const int refreshDatabaseAction = 2;
@@ -50,6 +52,9 @@ class _DatabasePageState extends State<DatabasePage>
 
   GlobalKey<LiquidPullToRefreshState> pullToRefreshState = GlobalKey();
 
+  late AnimationController _searchInputAnimController;
+  late Tween<Offset> _searchInputAnimTween;
+
   @override
   void initState() {
     super.initState();
@@ -60,11 +65,16 @@ class _DatabasePageState extends State<DatabasePage>
     });
     _currentWorkspace.value =
         DBWorkspaceManager.getInstance().getCurrentDBDir();
+    _searchInputAnimTween =
+        Tween(begin: const Offset(0, -1), end: const Offset(0, 0));
+    _searchInputAnimController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 300));
   }
 
   @override
   void dispose() {
     LanConnectService.getInstance().removeLanConnectCallback(this);
+    _searchInputAnimController.dispose();
     super.dispose();
   }
 
@@ -325,9 +335,8 @@ class _DatabasePageState extends State<DatabasePage>
                 }),
           ),
           GestureDetector(
-            onTap: () {
-              searchAction();
-            },
+            behavior: HitTestBehavior.opaque,
+            onTap: showTopSearch,
             child: SizedBox(
               width: 50,
               height: 50,
@@ -341,6 +350,7 @@ class _DatabasePageState extends State<DatabasePage>
             return Positioned(
               right: 0,
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () {
                   moreAction(buildContext);
                 },
@@ -358,10 +368,125 @@ class _DatabasePageState extends State<DatabasePage>
           Align(
             alignment: Alignment.bottomCenter,
             child: SpaceWidget.createHeightSpace(1, spaceColor: Colors.grey),
-          )
+          ),
+          SlideTransition(
+              position: _searchInputAnimController.drive(_searchInputAnimTween),
+              child: buildTitleSearchWidget()),
         ],
       ),
     );
+  }
+
+  void showTopSearch() {
+    if (_searchInputAnimController.isAnimating) {
+      return;
+    }
+    _lastBeforeSearchDBList.clear();
+    _lastBeforeSearchDBList.addAll(_currentDBFileList.value);
+    _dbSearchFocusNode.requestFocus();
+    _searchInputAnimController.forward();
+  }
+
+  void hideTopSearch() {
+    if (_searchInputAnimController.isAnimating) {
+      return;
+    }
+    _dbSearchTimer?.cancel();
+    _dbSearchTimer = null;
+    _currentDBFileList.value = List.from(_lastBeforeSearchDBList);
+    _dbSearchFocusNode.unfocus();
+    _searchInputAnimController.reverse();
+  }
+
+  final TextEditingController _dbSearchEditController = TextEditingController();
+  final FocusNode _dbSearchFocusNode = FocusNode();
+  final List _lastBeforeSearchDBList = [];
+  Timer? _dbSearchTimer;
+
+  void showSearchDBList(String filter) {
+    if (filter.isEmpty) {
+      _currentDBFileList.value = List.from(_lastBeforeSearchDBList);
+      return;
+    }
+    List dbFileList = _lastBeforeSearchDBList;
+    if (dbFileList.isEmpty) {
+      AppToast.show("暂无数据");
+      return;
+    } else {
+      dynamic firstDBFile = dbFileList[0];
+      if (firstDBFile is EmptyDataList) {
+        AppToast.show("暂无数据");
+        return;
+      } else {
+        if (_dbSearchTimer != null) {
+          _dbSearchTimer?.cancel();
+          _dbSearchTimer = null;
+        }
+        Log.message("DatabasePage showSearchDBList filter : $filter");
+        _dbSearchTimer = Timer(const Duration(milliseconds: 100), () {
+          List newDBFileList = [];
+          for (var element in dbFileList) {
+            if (element is DBFileInfo) {
+              if (element.dbFileName.contains(filter)) {
+                newDBFileList.add(element);
+              }
+            }
+          }
+          if (newDBFileList.isEmpty) {
+            newDBFileList.add(EmptyDataList());
+          }
+          Log.message(
+              "DatabasePage showSearchDBList filter result : $newDBFileList");
+          _currentDBFileList.value = newDBFileList;
+        });
+      }
+    }
+  }
+
+  Widget buildTitleSearchWidget() {
+    return RectangleShape(
+        solidColor: AppColors.whiteColor,
+        child: Stack(
+          children: [
+            SpaceWidget.createHeightSpace(1, spaceColor: Colors.grey),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                      child: Material(
+                    color: Colors.transparent,
+                    child: TextField(
+                      onChanged: (editValue) {
+                        showSearchDBList(editValue);
+                      },
+                      controller: _dbSearchEditController,
+                      focusNode: _dbSearchFocusNode,
+                      decoration: const InputDecoration(
+                          hintText: "输入数据库名称", border: InputBorder.none),
+                      keyboardType: TextInputType.url,
+                      cursorColor: const Color(0xff1E90FF),
+                      style: ThemeProvider.getDefTextStyle(
+                          defColor: const Color(0xff1E90FF)),
+                    ),
+                  )),
+                  GestureDetector(
+                    onTap: hideTopSearch,
+                    child: const Text(
+                      "返回",
+                      style:
+                          TextStyle(color: AppColors.mainColor, fontSize: 15),
+                    ),
+                  )
+                ],
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SpaceWidget.createHeightSpace(1, spaceColor: Colors.grey),
+            ),
+          ],
+        ));
   }
 
   void refreshListData() {
@@ -397,8 +522,6 @@ class _DatabasePageState extends State<DatabasePage>
       return;
     }
   }
-
-  void searchAction() {}
 
   void moreAction(BuildContext buildContext) {
     _moreActionWindow.show(buildContext, buildMorePopWidget(),
@@ -575,6 +698,10 @@ class _DatabasePageState extends State<DatabasePage>
 
   @override
   Future<bool> canGoBack() {
+    if (_searchInputAnimController.isCompleted) {
+      hideTopSearch();
+      return Future.value(false);
+    }
     return Future.value(true);
   }
 

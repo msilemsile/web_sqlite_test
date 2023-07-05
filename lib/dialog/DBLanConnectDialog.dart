@@ -245,7 +245,6 @@ class _DBLanConnectDialogState extends State<DBLanConnectDialog>
             int index = _currentSelectHost.value;
             HostInfo hostInfo = _hostInfoList[index];
             if (hostInfo.isLocalHost()) {
-              LanConnectService.getInstance().unConnectService();
               widget.onSelectHostCallback(hostInfo);
               widget.hide();
               return;

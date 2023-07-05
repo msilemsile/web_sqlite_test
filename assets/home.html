@@ -5,73 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>web_sql_test</title>
     <script src="./base64.min.js"></script>
-    <script>
-        ///路由协议格式
-        ///websql://host?action=xxx&routerId=xxx&dataKey=dataValue
-
-        function execSQL(routerId,dbName,sql,params){
-            try {
-                const jsonDataParamsMap = new Map().set("dbName",dbName)
-                                        .set("sql",sql)
-                                        .set("sqlParams",params);
-                window.websql.postMessage(buildWebSQLRoute(routerId,'execSQL',jsonDataParamsMap));
-            } catch(e) {
-                showAlert('执行sql失败');
-            }
-        }
-
-        //js回调函数
-        function onWebSQLCallback(routerResult,routerId){
-            routerResult = Base64.decode(routerResult);
-            console.log("onWebSQLCallback: routerId "+routerId +"\n"+"routerResult: "+routerResult);
-            showAlert("routerId =  "+routerId +"\n"+"routerResult = "+routerResult)
-        }
-
-        function mapToJson(map) {
-            return JSON.stringify(mapToObj(map));
-        }
-
-        function jsonToMap(jsonStr) {
-            return objToMap(JSON.parse(jsonStr));
-        }
-
-        function mapToObj(map) {
-            let obj = Object.create(null);
-            for (let [k,v] of map) {
-                obj[k] = v;
-            }
-            return obj;
-        }
-
-        function objToMap(obj) {
-            let map = new Map();
-            for (let k of Object.keys(obj)) {
-                map.set(k, obj[k]);
-            }
-            return map;
-        }
-
-        function buildWebSQLRoute(routerId,actionParamsName,jsonDataParamsMap){
-            const routerSchema = "websql://"
-            const routerHost = "host"
-            const routerAction = "action="
-            const routerIdConst = "routerId="
-            var webSQLRouter = routerSchema + routerHost + "?" 
-            + routerAction + actionParamsName + "&"
-            + routerIdConst + routerId;
-            for (var [key, value] of jsonDataParamsMap) {
-                console.log(key + ' = ' + value);
-                webSQLRouter = webSQLRouter + "&" + key + "=" + encodeURIComponent(value);
-            }
-            return webSQLRouter;
-        }
-
-        function showAlert(msg) {
-            setTimeout(function () {
-                alert(msg)
-            }, 100)
-        }
-    </script>
+    <script src="./websqlapi.js"></script>
 </head>
 <body style="display: flex;justify-content: center;flex-direction: column;align-items: center;">
     <div style="display: flex;align-items: center;">
@@ -81,6 +15,8 @@
     </div>
     <br>
     <p>web sql api使用</p>
+    <br>
+    <p>Api源码:/项目根目录/assets/websqlapi.js</p>
     <br>
     <p>自定义协议传输 协议格式如下:</p>
     <br>

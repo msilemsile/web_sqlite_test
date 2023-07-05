@@ -26,7 +26,7 @@ abstract class DBConstants {
     String dbTitle = "本地临时";
     switch (dbDirConst) {
       case DBDirConst.local:
-        dbTitle = "本地工作";
+        dbTitle = "本地空间";
         break;
       case DBDirConst.cacheLan:
         dbTitle = "本地缓存(局域网)";

@@ -70,6 +70,10 @@ class DBWorkspaceManager with WebSQLRouterCallback {
 
   void setCurrentDBDir(DBDirConst dbDirConst) {
     if (_currentDBDir != dbDirConst) {
+      if (!isRemoteDBDir(dbDirConst)) {
+        WebSQLHttpClient.getInstance().unConnect();
+        LanConnectService.getInstance().unConnectService();
+      }
       release();
       LanConnectService.getInstance().addWebRouterCallback(this);
       WebSQLHttpClient.getInstance().addWebRouterCallback(this);
@@ -81,7 +85,10 @@ class DBWorkspaceManager with WebSQLRouterCallback {
     return _currentDBDir;
   }
 
-  bool isRemoteDBDir() {
+  bool isRemoteDBDir([DBDirConst? dbDirConst]) {
+    if (dbDirConst != null) {
+      return dbDirConst == DBDirConst.lan || dbDirConst == DBDirConst.server;
+    }
     return _currentDBDir == DBDirConst.lan ||
         _currentDBDir == DBDirConst.server;
   }
@@ -113,7 +120,8 @@ class DBWorkspaceManager with WebSQLRouterCallback {
       String routerId =
           RouterManager.buildTempRouterId(RouterConstants.actionDownloadDB);
       _downLoadDBCallbackMap[routerId] = callback;
-      await WebSQLHttpClient.getInstance().setDownloadDBFileInfo(dbName, routerId);
+      await WebSQLHttpClient.getInstance()
+          .setDownloadDBFileInfo(dbName, routerId);
       WebSQLHttpClient.getInstance().downloadDB(dbName, routerId);
     } else {
       AppToast.show("本地空间不需要下载数据库");
