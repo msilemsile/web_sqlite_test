@@ -149,7 +149,6 @@ class RouterManager {
     });
     WebSQLRouter webSQLRouter =
         WebSQLRouter(paramAction, jsonData, paramRouterId);
-    Log.message("convertWebSQLRouter---result: $webSQLRouter");
     return webSQLRouter;
   }
 

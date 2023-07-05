@@ -52,6 +52,7 @@ dependencies:
   connectivity_plus: ^4.0.1
   network_info_plus: ^4.0.1
   url_launcher: ^6.1.11
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:
