@@ -3,7 +3,13 @@ import 'package:flutter_app/common/constant/AppConstant.dart';
 
 ///log日志
 class Log {
-  static void message(Object object, {String? tag, bool releasePrint = false}) {
+  static bool releasePrint = false;
+
+  static void enableReleaseLog() {
+    releasePrint = true;
+  }
+
+  static void message(Object object, {String? tag}) {
     if (releasePrint) {
       print("${tag ?? AppConstant.appTag}: $object");
     } else if (kDebugMode) {
